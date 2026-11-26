@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Employer Dashboard | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#173b70;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:22px;margin:0}header small{opacity:.85}.wrap{max-width:1100px;margin:auto;padding:20px}
+.welcome{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 2px 10px #0000000b}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:16px 0}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 10px #0000000b}.card h3{font-size:14px;color:#667085;margin:0 0 12px}.num{font-size:30px;font-weight:bold;color:#173b70}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.action{background:white;padding:20px;border-radius:14px;border:1px solid #e6eaf2}.action h3{margin-top:0}
+button,.btn{border:0;border-radius:9px;padding:12px 16px;background:#1769d2;color:white;font-weight:bold;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary{background:#536477}.notice{margin:14px 0;padding:12px;border-radius:9px;background:#fff4d6;color:#745300;display:none}
+#status{padding:12px;background:#eaf2ff;color:#164b91;border-radius:9px;margin-bottom:15px}
+@media(max-width:600px){header h1{font-size:19px}.wrap{padding:14px}}
+</style>
+</head>
+<body>
+<header><div><h1>Rozgar Setu</h1><small>Employer Dashboard</small></div><button class="secondary" id="logout">Logout</button></header>
+<div class="wrap">
+<div id="status">Checking your login…</div>
+<section class="welcome"><h2 id="welcome">Welcome</h2><div id="org">Loading organization profile…</div></section>
+<div class="cards">
+<div class="card"><h3>My Job Posts</h3><div class="num" id="jobCount">—</div></div>
+<div class="card"><h3>Applications Received</h3><div class="num" id="appCount">—</div></div>
+<div class="card"><h3>Account Status</h3><div class="num" style="font-size:20px" id="verifyStatus">—</div></div>
+</div>
+<div class="actions">
+<div class="action"><h3>Post a Job</h3><p>Create a new vacancy and reach candidates.</p><button id="postJob">Post a Job</button></div>
+<div class="action"><h3>My Jobs</h3><p>View and manage your job postings.</p><button class="secondary" id="myJobs">View My Jobs</button></div>
+<div class="action"><h3>Applicants</h3><p>Review applications received for your jobs.</p><button class="secondary" id="applicants">View Applicants</button></div>
+<div class="action"><h3>Company Profile</h3><p>Review or update your organization details.</p><button class="secondary" id="profile">Company Profile</button></div>
+</div>
+<div class="notice" id="notice"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {
+ apiKey: "AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",
+ authDomain: "rozgar-setu-843a4.firebaseapp.com",
+ projectId: "rozgar-setu-843a4",
+ storageBucket: "rozgar-setu-843a4.firebasestorage.app",
+ messagingSenderId: "126750586369",
+ appId: "1:126750586369:web:2715fb776914a8bd6a7200",
+ measurementId: "G-X1QWM01DV5"
+};
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+const statusEl=document.getElementById("status"), notice=document.getElementById("notice");
+function showNotice(msg){notice.textContent=msg;notice.style.display="block";}
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href="login.html";return;}
+ try{
+  const u=await getDoc(doc(db,"users",user.uid));
+  if(!u.exists()||u.data().role!=="employer"){statusEl.textContent="This dashboard is for Employer accounts.";await signOut(auth);location.href="login.html";return;}
+  const data=u.data(), name=data.organizationName||"Employer";
+  document.getElementById("welcome").textContent="Welcome, "+name;
+  document.getElementById("org").textContent="Contact person: "+(data.contactPerson||"Not provided")+" • "+user.email;
+  const employerSnap=await getDoc(doc(db,"employers",user.uid));
+  document.getElementById("verifyStatus").textContent=employerSnap.exists()?(employerSnap.data().verificationStatus||"Pending"):"Pending";
+  // Counts are read from jobs/applications collections; these require matching Firestore rules.
+  const jobsSnap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
+  document.getElementById("jobCount").textContent=jobsSnap.size;
+  let total=0;
+  for(const job of jobsSnap.docs){
+    const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",job.id)));
+    total+=apps.size;
+  }
+  document.getElementById("appCount").textContent=total;
+  statusEl.textContent="Logged in as Employer • "+user.email;
+ }catch(e){statusEl.textContent="Dashboard loaded, but some data could not be read. Check Firestore rules/collection field names.";console.error(e);}
+});
+document.getElementById("logout").onclick=async()=>{await signOut(auth);location.href="login.html";};
+document.getElementById("postJob").onclick=()=>showNotice("Job posting page will be connected in the next step.");
+document.getElementById("myJobs").onclick=()=>showNotice("My Jobs page will be connected in the next step.");
+document.getElementById("applicants").onclick=()=>showNotice("Applicants page will be connected in the next step.");
+document.getElementById("profile").onclick=()=>showNotice("Company Profile page will be connected in the next step.");
+</script>
+</body></html>
