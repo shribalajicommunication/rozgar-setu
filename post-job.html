@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Post a Job | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#173b70;color:#fff;padding:18px 20px}header h1{margin:0;font-size:22px}header p{margin:5px 0 0;opacity:.85}
+main{max-width:850px;margin:24px auto;padding:0 15px}.box{background:white;padding:22px;border-radius:14px;box-shadow:0 2px 12px #0000000b}
+h2{margin-top:0}form{display:grid;grid-template-columns:1fr 1fr;gap:15px}.field{display:flex;flex-direction:column;gap:7px}.full{grid-column:1/-1}
+label{font-weight:bold;font-size:14px}input,select,textarea{font:inherit;padding:12px;border:1px solid #cdd5e1;border-radius:9px;width:100%}textarea{min-height:130px;resize:vertical}
+button{background:#1769d2;color:white;border:0;padding:13px 18px;border-radius:9px;font-weight:bold;cursor:pointer}button:disabled{opacity:.6}
+#msg{display:none;padding:12px;border-radius:9px;margin-bottom:15px}.success{background:#e8f7ed;color:#176534}.error{background:#ffebeb;color:#9b2222}
+@media(max-width:600px){form{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><h1>Rozgar Setu</h1><p>Post a Job</p></header>
+<main><section class="box"><h2>Create Job Vacancy</h2><div id="msg"></div>
+<form id="jobForm">
+<div class="field"><label for="title">Job Title *</label><input id="title" required maxlength="120" placeholder="e.g. Sales Executive"></div>
+<div class="field"><label for="category">Job Category *</label><input id="category" required placeholder="e.g. IT, Sales, Education"></div>
+<div class="field"><label for="location">Job Location *</label><input id="location" required placeholder="City, State"></div>
+<div class="field"><label for="qualification">Required Qualification *</label><input id="qualification" required placeholder="e.g. 12th, Graduate"></div>
+<div class="field"><label for="experience">Experience</label><input id="experience" placeholder="e.g. Fresher / 2 years"></div>
+<div class="field"><label for="salary">Salary / Pay</label><input id="salary" placeholder="e.g. ₹15,000 per month"></div>
+<div class="field"><label for="vacancies">Number of Vacancies *</label><input id="vacancies" type="number" min="1" required value="1"></div>
+<div class="field"><label for="lastDate">Last Date to Apply *</label><input id="lastDate" type="date" required></div>
+<div class="field full"><label for="description">Job Description *</label><textarea id="description" required placeholder="Responsibilities, requirements and other details"></textarea></div>
+<div class="full"><button type="submit" id="submitBtn">Submit Job</button></div>
+</form></section></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,collection,addDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let currentUser=null,orgName="",allowed=false;
+const msg=document.getElementById("msg"),btn=document.getElementById("submitBtn");
+function message(t,type){msg.textContent=t;msg.className=type;msg.style.display="block";}
+onAuthStateChanged(auth,async user=>{
+ if(!user){location.href="login.html";return;}
+ currentUser=user;
+ try{const snap=await getDoc(doc(db,"users",user.uid));
+ if(!snap.exists()||snap.data().role!=="employer"){message("Employer account required. Redirecting to login.","error");location.href="login.html";return;}
+ orgName=snap.data().organizationName||"";
+ allowed=true;
+ }catch(e){message("Could not verify your account. Please try again.","error");}
+});
+document.getElementById("jobForm").addEventListener("submit",async e=>{
+ e.preventDefault();if(!allowed||!currentUser){message("Please wait while your account is verified.","error");return;}
+ btn.disabled=true;btn.textContent="Submitting…";
+ try{
+ const job={employerId:currentUser.uid,employerEmail:currentUser.email,organizationName:orgName,title:document.getElementById("title").value.trim(),category:document.getElementById("category").value.trim(),location:document.getElementById("location").value.trim(),qualification:document.getElementById("qualification").value.trim(),experience:document.getElementById("experience").value.trim(),salary:document.getElementById("salary").value.trim(),vacancies:Number(document.getElementById("vacancies").value),lastDate:document.getElementById("lastDate").value,description:document.getElementById("description").value.trim(),status:"pending",createdAt:serverTimestamp()};
+ await addDoc(collection(db,"jobs"),job);
+ message("Job submitted successfully! It has been saved for review.","success");
+ document.getElementById("jobForm").reset();
+ }catch(err){console.error(err);message("Could not submit job. Firestore permissions or connection may need checking.","error");}
+ btn.disabled=false;btn.textContent="Submit Job";
+});
+</script>
+</body></html>
