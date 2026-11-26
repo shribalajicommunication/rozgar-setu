@@ -25,5 +25,14 @@ const data=u.data();document.getElementById("welcome").textContent="Welcome, "+(
 const profileSnap=await getDoc(doc(db,"jobSeekers",user.uid));document.getElementById("profile").textContent=profileSnap.exists()?"Profile available":"Profile incomplete";
 const apps=await getDocs(query(collection(db,"applications"),where("applicantId","==",user.uid)));document.getElementById("count").textContent=apps.size;const box=document.getElementById("apps");
 if(apps.empty){box.innerHTML='<p style="color:#64748b">You have not applied for any jobs yet.</p>';return;}
-for(const aDoc of apps.docs){const a=aDoc.data(),row=document.createElement("div");row.className="app";const title=document.createElement("h3");title.textContent=a.jobTitle||"Job Application";const info=document.createElement("div");info.className="meta";info.textContent="Application status: "+(a.status||"Applied")+" • Submitted: "+(a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString():"");const st=document.createElement("span");st.className="status";st.textContent=a.status||"Applied";row.append(title,info,st);box.append(row);}
+for(const aDoc of apps.docs){
+ const a=aDoc.data(),row=document.createElement("div");row.className="app";
+ let job={};try{if(a.jobId){const j=await getDoc(doc(db,"jobs",a.jobId));if(j.exists())job=j.data();}}catch(e){console.warn("Job details unavailable",e)}
+ const title=document.createElement("h3");title.textContent=a.jobTitle||job.title||"Job Application";
+ const info=document.createElement("div");info.className="meta";
+ const submitted=a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString():"";
+ info.textContent="Organization: "+(a.organizationName||job.organizationName||"Not available")+" • Location: "+(job.location||"Not available")+" • Submitted: "+submitted;
+ const st=document.createElement("span");st.className="status";st.textContent="Application status: "+(a.status||"Applied");
+ row.append(title,info,st);box.append(row);
+}
 }catch(e){console.error(e);document.getElementById("msg").textContent="Could not load dashboard. Check Firestore rules.";}});</script></body></html>
