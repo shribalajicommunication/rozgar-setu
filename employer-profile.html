@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rozgar Setu | Employer Profile</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#172033}
+header{background:#173b70;color:white;padding:18px}header h1{margin:0;font-size:22px}header p{margin:6px 0 0}
+main{max-width:850px;margin:auto;padding:18px}.card{background:white;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 2px 12px #00000008}
+label{display:block;font-weight:600;margin:12px 0 6px}input,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}textarea{min-height:100px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}button{background:#2563eb;color:white;border:0;padding:12px 18px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}.muted{color:#64748b;font-size:14px}#msg{margin-top:12px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><h1>Rozgar Setu – Employer Profile</h1><p>Complete your organization profile.</p></header>
+<main><div class="card"><h2>Company / Organization Profile</h2><p class="muted">Account email and mobile are prefilled where available.</p>
+<form id="form">
+<div class="grid">
+<div><label>Organization Name *</label><input id="organizationName" required></div>
+<div><label>Contact Person *</label><input id="contactPerson" required></div>
+<div><label>Mobile Number *</label><input id="mobile" type="tel" maxlength="15" required></div>
+<div><label>Email</label><input id="email" type="email" readonly></div>
+<div><label>Website (Optional)</label><input id="website" type="url" placeholder="https://"></div>
+</div>
+<label>Organization Address</label><textarea id="address"></textarea>
+<label>About Organization</label><textarea id="about" placeholder="Brief description of your organization"></textarea>
+<button type="submit" id="save">Save Profile</button><p id="msg"></p>
+</form></div></main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),msg=document.getElementById("msg");
+const ids=["organizationName","contactPerson","mobile","website","address","about"];let user=null;
+onAuthStateChanged(auth,async u=>{if(!u){msg.textContent="Please login first.";location.href="login.html";return}user=u;document.getElementById("email").value=u.email||"";
+try{const us=await getDoc(doc(db,"users",u.uid));if(us.exists()){const d=us.data();["organizationName","contactPerson","mobile"].forEach(k=>{if(d[k])document.getElementById(k).value=d[k]})}
+const snap=await getDoc(doc(db,"employers",u.uid));if(snap.exists()){const d=snap.data();ids.forEach(k=>{if(d[k]!==undefined)document.getElementById(k).value=d[k]});}}catch(e){msg.textContent="Load failed: "+e.message}});
+document.getElementById("form").addEventListener("submit",async ev=>{ev.preventDefault();if(!user)return;const data={uid:user.uid,email:user.email||"",updatedAt:serverTimestamp()};ids.forEach(k=>data[k]=document.getElementById(k).value.trim());
+document.getElementById("save").disabled=true;msg.textContent="Saving...";
+try{await setDoc(doc(db,"employers",user.uid),data,{merge:true});await setDoc(doc(db,"users",user.uid),{mobile:data.mobile},{merge:true});msg.textContent="Employer profile saved successfully!";}catch(e){msg.textContent="Save failed: "+e.message;}finally{document.getElementById("save").disabled=false}});
+</script></body></html>
