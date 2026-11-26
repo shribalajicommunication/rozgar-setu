@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rozgar Setu | Admin Panel</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#1e293b}
+header{background:#172554;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:22px}header small{opacity:.8}main{max-width:1100px;margin:auto;padding:20px}
+.notice{background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:10px;color:#9a3412;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:16px 0}
+.stat{background:white;padding:18px;border-radius:12px;box-shadow:0 2px 8px #00000008}.stat b{display:block;font-size:24px;margin-top:8px}
+.panel{background:white;border-radius:12px;padding:18px;margin:16px 0;box-shadow:0 2px 8px #00000008}
+input,button{font-size:15px;padding:10px;border-radius:8px}input{border:1px solid #cbd5e1;max-width:100%}button{border:0;background:#2563eb;color:white;cursor:pointer}button.secondary{background:#64748b}button.danger{background:#dc2626}button.success{background:#16a34a}
+table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;vertical-align:top}th{background:#f8fafc}
+.tablewrap{overflow-x:auto}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{font-weight:bold}.empty{padding:20px;text-align:center;color:#64748b}
+#adminContent{display:none}#loginPanel{max-width:440px;margin:45px auto}
+</style>
+</head>
+<body>
+<header><div><h1>Rozgar Setu Admin</h1><small>Find Opportunities. Connect Talent.</small></div><button id="logoutBtn" style="display:none" class="secondary">Logout</button></header>
+<main>
+<div class="notice"><b>Security note:</b> Admin access must be assigned securely in Firestore. This page alone does not grant admin privileges.</div>
+<section class="panel" id="loginPanel"><h2>Admin Login</h2><p>Sign in using the Firebase account assigned the <code>admin</code> role.</p>
+<input id="email" type="email" placeholder="Admin email" style="width:100%;margin-bottom:10px">
+<input id="password" type="password" placeholder="Password" style="width:100%;margin-bottom:10px">
+<button id="loginBtn">Login</button><p id="loginMsg"></p></section>
+<section id="adminContent">
+<div class="stats"><div class="stat">Pending Jobs<b id="pendingJobs">—</b></div><div class="stat">Approved Jobs<b id="approvedJobs">—</b></div><div class="stat">Employers<b id="employerCount">—</b></div><div class="stat">Job Seekers<b id="seekerCount">—</b></div></div>
+<section class="panel"><h2>Pending Job Approvals</h2><p>Approve or reject employer-submitted jobs.</p><div class="tablewrap"><table><thead><tr><th>Job / Employer</th><th>Details</th><th>Actions</th></tr></thead><tbody id="pendingList"></tbody></table></div></section>
+<section class="panel"><h2>Employer Verification</h2><div class="tablewrap"><table><thead><tr><th>Organization</th><th>Contact</th><th>Status</th><th>Action</th></tr></thead><tbody id="employerList"></tbody></table></div></section>
+</section>
+</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,collection,getDocs,query,where,updateDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=id=>document.getElementById(id);
+$("loginBtn").onclick=async()=>{ $("loginMsg").textContent="Signing in...";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("loginMsg").textContent=e.message}};
+$("logoutBtn").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async user=>{if(!user){$("loginPanel").style.display="block";$("adminContent").style.display="none";$("logoutBtn").style.display="none";return}
+try{const snap=await getDoc(doc(db,"users",user.uid));if(!snap.exists()||snap.data().role!=="admin"){await signOut(auth);$("loginMsg").textContent="Access denied: this account is not assigned the admin role.";return}
+$("loginPanel").style.display="none";$("adminContent").style.display="block";$("logoutBtn").style.display="inline-block";await loadAdmin();
+}catch(e){$("loginMsg").textContent="Admin access check failed: "+e.message;await signOut(auth)}});
+async function loadAdmin(){
+const jobsSnap=await getDocs(collection(db,"jobs"));let pending=[],approved=0;
+jobsSnap.forEach(d=>{const x=d.data();if(x.status==="pending")pending.push({id:d.id,...x});if(x.status==="approved")approved++});
+$("pendingJobs").textContent=pending.length;$("approvedJobs").textContent=approved;
+$("pendingList").innerHTML=pending.length?pending.map(j=>`<tr><td><b>${esc(j.title||"Untitled")}</b><br>${esc(j.organizationName||"")}<br><small>${esc(j.employerEmail||"")}</small></td><td>${esc(j.location||"")}<br>${esc(j.category||"")}<br>Vacancies: ${esc(j.vacancies??"")}<br>Last date: ${esc(j.lastDate||"")}<br><details><summary>Description</summary>${esc(j.description||"")}</details></td><td><button class="success" data-approve="${j.id}">Approve</button> <button class="danger" data-reject="${j.id}">Reject</button></td></tr>`).join(""):'<tr><td colspan="3" class="empty">No pending jobs</td></tr>';
+$("pendingList").querySelectorAll("[data-approve]").forEach(b=>b.onclick=async()=>{if(confirm("Approve this job?")){await updateDoc(doc(db,"jobs",b.dataset.approve),{status:"approved"});await loadAdmin()}});
+$("pendingList").querySelectorAll("[data-reject]").forEach(b=>b.onclick=async()=>{if(confirm("Reject this job?")){await updateDoc(doc(db,"jobs",b.dataset.reject),{status:"rejected"});await loadAdmin()}});
+const users=await getDocs(collection(db,"users"));let employers=[],seekers=0;users.forEach(d=>{const u=d.data();if(u.role==="employer")employers.push({id:d.id,...u});if(["jobSeeker","jobseeker","job_seeker"].includes(u.role))seekers++});
+$("employerCount").textContent=employers.length;$("seekerCount").textContent=seekers;
+$("employerList").innerHTML=employers.length?employers.map(e=>`<tr><td>${esc(e.organizationName||"—")}<br><small>${esc(e.email||"")}</small></td><td>${esc(e.contactPerson||"")}<br>${esc(e.mobile||"")}</td><td>${esc(e.verificationStatus||"pending")}</td><td>${e.verificationStatus==="approved"?'<span class="status">Approved</span>':`<button class="success" data-emp="${e.id}">Verify</button>`}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">No employers found</td></tr>';
+$("employerList").querySelectorAll("[data-emp]").forEach(b=>b.onclick=async()=>{if(confirm("Verify this employer?")){await updateDoc(doc(db,"users",b.dataset.emp),{verificationStatus:"approved"});await loadAdmin()}});
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+</script>
+</body></html>
