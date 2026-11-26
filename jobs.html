@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find Jobs | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#173b70;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:22px}header small{opacity:.85}.wrap{max-width:1100px;margin:auto;padding:20px}
+.panel{background:white;border-radius:14px;padding:18px;box-shadow:0 2px 12px #0000000b;margin-bottom:16px}
+.filters{display:grid;grid-template-columns:1fr 1fr auto;gap:10px}input{font:inherit;padding:12px;border:1px solid #cbd5e1;border-radius:9px;width:100%}
+button{background:#1769d2;color:white;border:0;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.secondary{background:#536477}
+#msg{padding:12px;border-radius:9px;background:#eaf2ff;color:#164b91;margin:12px 0}
+.job{border:1px solid #e2e8f0;border-radius:12px;padding:17px;margin:12px 0}.job h3{margin:0 0 10px}.meta{color:#596579;font-size:14px;line-height:1.7}.desc{white-space:pre-wrap;margin:12px 0}.apply{margin-top:12px}
+@media(max-width:600px){.filters{grid-template-columns:1fr}}
+</style></head><body>
+<header><div><h1>Rozgar Setu</h1><small>Find Jobs</small></div><button class="secondary" id="loginBtn">Login</button></header>
+<div class="wrap"><section class="panel"><h2>Find Your Next Opportunity</h2><div class="filters"><input id="search" placeholder="Search job title or category"><input id="place" placeholder="Location"><button id="searchBtn">Search</button></div><div id="msg">Loading jobs…</div><div id="list"></div></section></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,collection,query,where,getDocs,doc,getDoc,addDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);let user=null,all=[];
+const list=document.getElementById("list"),msg=document.getElementById("msg");
+document.getElementById("loginBtn").onclick=()=>location.href="login.html";
+onAuthStateChanged(auth,u=>{user=u;document.getElementById("loginBtn").textContent=u?"Account":"Login";});
+function render(){list.innerHTML="";const qtxt=document.getElementById("search").value.trim().toLowerCase(),loc=document.getElementById("place").value.trim().toLowerCase();
+const filtered=all.filter(j=>(!qtxt||(j.title||"").toLowerCase().includes(qtxt)||(j.category||"").toLowerCase().includes(qtxt))&&(!loc||(j.location||"").toLowerCase().includes(loc)));
+if(!filtered.length){list.innerHTML='<p style="text-align:center;color:#64748b;padding:20px">No matching jobs found.</p>';return;}
+filtered.forEach(j=>{const d=document.createElement("article");d.className="job";const title=document.createElement("h3");title.textContent=j.title||"Job";const meta=document.createElement("div");meta.className="meta";meta.textContent=(j.organizationName||"Employer")+" • "+(j.location||"Location not specified")+" • "+(j.category||"")+" • "+(j.salary||"Salary not specified")+" • Vacancies: "+(j.vacancies||"—");const desc=document.createElement("div");desc.className="desc";desc.textContent=j.description||"";const extra=document.createElement("div");extra.className="meta";extra.textContent="Qualification: "+(j.qualification||"—")+" | Experience: "+(j.experience||"—")+" | Last date: "+(j.lastDate||"—");const btn=document.createElement("button");btn.className="apply";btn.textContent="Apply Now";btn.onclick=()=>apply(j);d.append(title,meta,extra,desc,btn);list.append(d);});}
+async function apply(j){if(!user){alert("Please login first to apply.");location.href="login.html";return;}try{const u=await getDoc(doc(db,"users",user.uid));if(!u.exists()||u.data().role!=="jobSeeker"){alert("Please login with a Job Seeker account to apply.");return;}const profile=await getDoc(doc(db,"jobSeekers",user.uid));const data=profile.exists()?profile.data():{};const existing=await getDocs(query(collection(db,"applications"),where("jobId","==",j.id),where("applicantId","==",user.uid)));if(!existing.empty){alert("You have already applied for this job.");return;}await addDoc(collection(db,"applications"),{jobId:j.id,applicantId:user.uid,employerId:j.employerId,fullName:data.fullName||u.data().fullName||"",email:user.email||"",mobile:data.mobile||u.data().mobile||"",status:"Applied",createdAt:new Date()});alert("Application submitted successfully!");}catch(e){console.error(e);alert("Application failed. Please check Firestore permissions.");}}
+document.getElementById("searchBtn").onclick=render;
+(async()=>{try{const s=await getDocs(query(collection(db,"jobs"),where("status","==","approved")));s.forEach(d=>all.push({...d.data(),id:d.id}));msg.textContent="Approved jobs: "+all.length;render();}catch(e){console.error(e);msg.textContent="Unable to load jobs. Check Firestore rules.";}})();
+</script></body></html>
