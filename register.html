@@ -7,78 +7,124 @@
 <title>Register - Rozgar Setu</title>
 
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f3f6fb;
-  color:#222;
+* {
+  box-sizing: border-box;
 }
-header{
-  background:#1769aa;
-  color:white;
-  text-align:center;
-  padding:22px;
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #222;
 }
-header h1{margin:0}
-.container{
-  max-width:600px;
-  margin:25px auto;
-  background:white;
-  padding:25px;
-  border-radius:14px;
-  box-shadow:0 4px 15px rgba(0,0,0,.08);
+
+header {
+  background: #1769aa;
+  color: white;
+  text-align: center;
+  padding: 22px 15px;
 }
-h2{text-align:center;color:#1769aa}
-.role-buttons{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
+
+header h1 {
+  margin: 0;
 }
-.role-buttons button{
-  flex:1;
-  padding:13px;
-  border:0;
-  border-radius:8px;
-  background:#ddd;
-  font-weight:bold;
-  cursor:pointer;
+
+.container {
+  max-width: 600px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
-.role-buttons button.active{
-  background:#1769aa;
-  color:white;
+
+h2 {
+  text-align: center;
+  color: #1769aa;
 }
-input{
-  width:100%;
-  padding:13px;
-  margin:9px 0;
-  border:1px solid #ccc;
-  border-radius:8px;
-  font-size:16px;
+
+.role-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
 }
-.submit-btn{
-  width:100%;
-  padding:14px;
-  border:0;
-  border-radius:8px;
-  background:#ff9800;
-  color:#222;
-  font-size:17px;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:15px;
+
+.role-buttons button {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid #1769aa;
+  border-radius: 8px;
+  background: white;
+  color: #1769aa;
+  font-weight: bold;
+  cursor: pointer;
 }
-.hidden{display:none}
-#message{
-  text-align:center;
-  margin-top:15px;
-  font-weight:bold;
-  overflow-wrap:anywhere;
+
+.role-buttons button.active {
+  background: #1769aa;
+  color: white;
 }
-footer{
-  text-align:center;
-  padding:20px;
-  color:#777;
+
+label {
+  display: block;
+  margin-top: 14px;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  margin-top: 7px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 22px;
+  background: #ff9800;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+}
+
+.message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-link a {
+  color: #1769aa;
+  text-decoration: none;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+@media(max-width:500px) {
+  .container {
+    margin: 15px;
+    padding: 20px;
+  }
 }
 </style>
 </head>
@@ -86,8 +132,8 @@ footer{
 <body>
 
 <header>
-<h1>🌉 Rozgar Setu</h1>
-<p>Find Opportunities. Connect Talent.</p>
+  <h1>Rozgar Setu</h1>
+  <p>Find Opportunities. Connect Talent.</p>
 </header>
 
 <div class="container">
@@ -95,56 +141,61 @@ footer{
 <h2>Create Your Account</h2>
 
 <div class="role-buttons">
-<button type="button" id="jobBtn"
-class="active" onclick="selectRole('jobSeeker')">
-Job Seeker
-</button>
+  <button type="button" id="jobBtn"
+  class="active" onclick="selectRole('jobSeeker')">
+  Job Seeker
+  </button>
 
-<button type="button" id="empBtn"
-onclick="selectRole('employer')">
-Employer
-</button>
+  <button type="button" id="empBtn"
+  onclick="selectRole('employer')">
+  Employer
+  </button>
 </div>
 
 <form id="registerForm">
 
-<div id="empFields" class="hidden">
-<input type="text" id="companyName"
-placeholder="Company / Institution Name">
-</div>
-
+<label>Full Name</label>
 <input type="text" id="fullName"
-placeholder="Full Name" required>
-
-<input type="email" id="email"
-placeholder="Email Address" required>
-
-<input type="tel" id="mobile"
-placeholder="Mobile Number" required
-maxlength="10">
-
-<div id="jobFields">
-<input type="text" id="qualification"
-placeholder="Qualification">
-<input type="text" id="skills"
-placeholder="Skills">
-</div>
-
-<input type="password" id="password"
-placeholder="Password (minimum 6 characters)"
+placeholder="Enter your full name"
 required>
 
-<input type="password" id="confirmPassword"
-placeholder="Confirm Password" required>
+<label>Mobile Number</label>
+<input type="tel" id="mobile"
+placeholder="Enter 10 digit mobile number"
+maxlength="10"
+pattern="[0-9]{10}"
+required>
 
-<button class="submit-btn" id="submitBtn"
-type="submit">
+<label>Email Address</label>
+<input type="email" id="email"
+placeholder="Enter your email"
+required>
+
+<label>Password</label>
+<input type="password" id="password"
+placeholder="Create password (minimum 6 characters)"
+minlength="6"
+required>
+
+<label>Confirm Password</label>
+<input type="password" id="confirmPassword"
+placeholder="Confirm your password"
+minlength="6"
+required>
+
+<button type="submit" class="submit-btn"
+id="submitBtn">
 Create Account
 </button>
 
+<div class="message" id="message"></div>
+
 </form>
 
-<div id="message"></div>
+<div class="login-link">
+Already have an account?
+<a href="login.html">Login</a>
+</div>
 
 </div>
 
@@ -157,15 +208,24 @@ Create Account
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-import { getAuth, createUserWithEmailAndPassword }
+import {
+  getAuth,
+  createUserWithEmailAndPassword
+}
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import { getFirestore, doc, setDoc }
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  serverTimestamp
+}
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Firebase Configuration
+
 const firebaseConfig = {
-  apiKey: "AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",
+  apiKey: "AIzaSyC4C1dT7zYlZZNwEnCyQBgZo1TReTSgH1E",
   authDomain: "rozgar-setu-843a4.firebaseapp.com",
   projectId: "rozgar-setu-843a4",
   storageBucket: "rozgar-setu-843a4.firebasestorage.app",
@@ -180,15 +240,9 @@ const db = getFirestore(app);
 
 let selectedRole = "jobSeeker";
 
-window.selectRole = function(role){
+window.selectRole = function(role) {
 
   selectedRole = role;
-
-  document.getElementById("jobFields")
-  .classList.toggle("hidden", role !== "jobSeeker");
-
-  document.getElementById("empFields")
-  .classList.toggle("hidden", role !== "employer");
 
   document.getElementById("jobBtn")
   .classList.toggle("active", role === "jobSeeker");
@@ -198,98 +252,131 @@ window.selectRole = function(role){
 };
 
 document.getElementById("registerForm")
-.addEventListener("submit", async function(e){
+.addEventListener("submit", async function(e) {
 
   e.preventDefault();
 
-  const name = document.getElementById("fullName").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const mobile = document.getElementById("mobile").value.trim();
-  const password = document.getElementById("password").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
-  const companyName = document.getElementById("companyName").value.trim();
-  const qualification = document.getElementById("qualification").value.trim();
-  const skills = document.getElementById("skills").value.trim();
+  const fullName =
+  document.getElementById("fullName").value.trim();
 
-  const message = document.getElementById("message");
-  const submitBtn = document.getElementById("submitBtn");
+  const mobile =
+  document.getElementById("mobile").value.trim();
 
-  message.style.color = "red";
+  const email =
+  document.getElementById("email").value.trim();
 
-  if(!/^[6-9]\d{9}$/.test(mobile)){
-    message.textContent = "Enter a valid 10-digit mobile number.";
+  const password =
+  document.getElementById("password").value;
+
+  const confirmPassword =
+  document.getElementById("confirmPassword").value;
+
+  const message =
+  document.getElementById("message");
+
+  const submitBtn =
+  document.getElementById("submitBtn");
+
+  message.style.color = "#d93025";
+  message.textContent = "";
+
+  if(!/^[0-9]{10}$/.test(mobile)) {
+    message.textContent =
+    "Please enter a valid 10 digit mobile number.";
     return;
   }
 
-  if(password.length < 6){
-    message.textContent = "Password must be at least 6 characters.";
-    return;
-  }
-
-  if(password !== confirmPassword){
-    message.textContent = "Passwords do not match.";
-    return;
-  }
-
-  if(selectedRole === "employer" && !companyName){
-    message.textContent = "Please enter company name.";
+  if(password !== confirmPassword) {
+    message.textContent =
+    "Passwords do not match.";
     return;
   }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Creating Account...";
-  message.textContent = "";
-
-  try{
+  
+  try {
 
     const userCredential =
-    await createUserWithEmailAndPassword(auth, email, password);
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
     const uid = userCredential.user.uid;
 
-    const profile = {
+    // Main user profile
+
+    await setDoc(doc(db, "users", uid), {
       uid: uid,
-      name: name,
-      email: email,
+      fullName: fullName,
       mobile: mobile,
+      email: email,
       role: selectedRole,
-      createdAt: new Date().toISOString(),
-      accountStatus: "active"
-    };
+      createdAt: serverTimestamp()
+    });
 
-    if(selectedRole === "jobSeeker"){
-      profile.qualification = qualification;
-      profile.skills = skills;
+    // Role-specific profile
+
+    if(selectedRole === "jobSeeker") {
+
+      await setDoc(doc(db, "jobSeekers", uid), {
+        uid: uid,
+        fullName: fullName,
+        mobile: mobile,
+        email: email,
+        profileStatus: "incomplete",
+        createdAt: serverTimestamp()
+      });
+
+    } else {
+
+      await setDoc(doc(db, "employers", uid), {
+        uid: uid,
+        fullName: fullName,
+        mobile: mobile,
+        email: email,
+        verificationStatus: "pending",
+        createdAt: serverTimestamp()
+      });
+
     }
-
-    if(selectedRole === "employer"){
-      profile.companyName = companyName;
-      profile.verificationStatus = "pending";
-    }
-
-    await setDoc(doc(db, "users", uid), profile);
 
     message.style.color = "green";
+
     message.textContent =
     "Registration successful! Your account has been created.";
 
     document.getElementById("registerForm").reset();
 
-  }catch(error){
+    submitBtn.textContent = "Account Created";
 
-    message.style.color = "red";
+  } catch(error) {
 
-    if(error.code === "auth/email-already-in-use"){
-      message.textContent = "This email is already registered.";
-    }
-    else if(error.code === "auth/weak-password"){
-      message.textContent = "Please choose a stronger password.";
-    }
-    else{
-      message.textContent = error.message;
-    }
+    console.error(error);
 
-  }finally{
+    if(error.code === "auth/email-already-in-use") {
+
+      message.textContent =
+      "This email is already registered.";
+
+    } else if(error.code === "auth/weak-password") {
+
+      message.textContent =
+      "Password must be at least 6 characters.";
+
+    } else if(error.code === "auth/invalid-email") {
+
+      message.textContent =
+      "Please enter a valid email address.";
+
+    } else {
+
+      message.textContent =
+      "Registration failed: " + error.message;
+
+    }
 
     submitBtn.disabled = false;
     submitBtn.textContent = "Create Account";
