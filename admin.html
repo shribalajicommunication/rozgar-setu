@@ -34,7 +34,7 @@ table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,doc,getDoc,collection,getDocs,query,where,updateDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {getFirestore,doc,getDoc,collection,getDocs,query,where,updateDoc,setDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
@@ -54,7 +54,17 @@ $("pendingList").querySelectorAll("[data-reject]").forEach(b=>b.onclick=async()=
 const users=await getDocs(collection(db,"users"));let employers=[],seekers=0;users.forEach(d=>{const u=d.data();if(u.role==="employer")employers.push({id:d.id,...u});if(["jobSeeker","jobseeker","job_seeker"].includes(u.role))seekers++});
 $("employerCount").textContent=employers.length;$("seekerCount").textContent=seekers;
 $("employerList").innerHTML=employers.length?employers.map(e=>`<tr><td>${esc(e.organizationName||"—")}<br><small>${esc(e.email||"")}</small></td><td>${esc(e.contactPerson||"")}<br>${esc(e.mobile||"")}</td><td>${esc(e.verificationStatus||"pending")}</td><td>${e.verificationStatus==="approved"?'<span class="status">Approved</span>':`<button class="success" data-emp="${e.id}">Verify</button>`}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">No employers found</td></tr>';
-$("employerList").querySelectorAll("[data-emp]").forEach(b=>b.onclick=async()=>{if(confirm("Verify this employer?")){await updateDoc(doc(db,"users",b.dataset.emp),{verificationStatus:"approved"});await loadAdmin()}});
+$("employerList").querySelectorAll("[data-emp]").forEach(b=>b.onclick=async()=>{
+ if(confirm("Verify this employer?")){
+  b.disabled=true;b.textContent="Updating...";
+  try{
+   const uid=b.dataset.emp;
+   await updateDoc(doc(db,"users",uid),{verificationStatus:"approved"});
+   try{await setDoc(doc(db,"employers",uid),{verificationStatus:"approved"},{merge:true});}catch(profileErr){console.warn("Employer profile status update:",profileErr)}
+   alert("Employer verified successfully.");await loadAdmin();
+  }catch(err){alert("Verification failed: "+err.message);b.disabled=false;b.textContent="Verify";}
+ }
+});
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 </script>
