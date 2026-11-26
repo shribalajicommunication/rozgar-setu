@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eaf2ff,#f6f8fc);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;color:#1f2937}
+.card{width:100%;max-width:420px;background:#fff;border-radius:18px;padding:28px;box-shadow:0 12px 35px rgba(30,60,100,.12)}
+h1{text-align:center;margin:0;color:#174ea6;font-size:28px} .tag{text-align:center;color:#64748b;margin:8px 0 24px}
+label{display:block;margin:14px 0 6px;font-weight:600;font-size:14px}input{width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px}
+button{width:100%;border:0;border-radius:10px;padding:14px;background:#1764d1;color:#fff;font-size:16px;font-weight:700;margin-top:20px;cursor:pointer}
+button:disabled{opacity:.65;cursor:wait}.message{margin-top:14px;text-align:center;font-size:14px;line-height:1.5}
+.links{text-align:center;margin-top:18px;font-size:14px}.links a{color:#1764d1;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Rozgar Setu</h1>
+<p class="tag">Find Opportunities. Connect Talent.</p>
+<h2 style="text-align:center;font-size:20px">Login to Your Account</h2>
+<form id="loginForm">
+<label for="email">Email Address</label>
+<input type="email" id="email" autocomplete="email" required placeholder="Enter your email">
+<label for="password">Password</label>
+<input type="password" id="password" autocomplete="current-password" required placeholder="Enter your password">
+<button id="loginBtn" type="submit">Login</button>
+</form>
+<div id="message" class="message" role="status"></div>
+<div class="links"><a href="register.html">Don't have an account? Register</a></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",
+  authDomain: "rozgar-setu-843a4.firebaseapp.com",
+  projectId: "rozgar-setu-843a4",
+  storageBucket: "rozgar-setu-843a4.firebasestorage.app",
+  messagingSenderId: "126750586369",
+  appId: "1:126750586369:web:2715fb776914a8bd6a7200",
+  measurementId: "G-X1QWM01DV5"
+};
+const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+const form=document.getElementById("loginForm"), msg=document.getElementById("message"), btn=document.getElementById("loginBtn");
+form.addEventListener("submit",async(e)=>{
+ e.preventDefault(); msg.textContent="";btn.disabled=true;btn.textContent="Logging in...";
+ try{
+  const credential=await signInWithEmailAndPassword(auth,document.getElementById("email").value.trim(),document.getElementById("password").value);
+  const userDoc=await getDoc(doc(db,"users",credential.user.uid));
+  if(!userDoc.exists()){msg.style.color="#b91c1c";msg.textContent="Account profile not found. Please contact support.";await auth.signOut();return;}
+  const role=userDoc.data().role;
+  if(role==="employer"){window.location.href="employer-dashboard.html";}
+  else if(role==="jobSeeker"||role==="jobseeker"||role==="job_seeker"){window.location.href="job-seeker-dashboard.html";}
+  else {msg.style.color="#b91c1c";msg.textContent="Account role is missing or invalid. Please contact support.";await auth.signOut();}
+ }catch(error){
+  msg.style.color="#b91c1c";
+  if(error.code==="auth/invalid-credential"||error.code==="auth/wrong-password"||error.code==="auth/user-not-found")msg.textContent="Incorrect email or password.";
+  else if(error.code==="auth/too-many-requests")msg.textContent="Too many attempts. Please try again later.";
+  else msg.textContent="Login failed: "+error.message;
+ }finally{btn.disabled=false;btn.textContent="Login";}
+});
+</script>
+</body>
+</html>
