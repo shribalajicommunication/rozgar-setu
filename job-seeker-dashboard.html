@@ -10,7 +10,7 @@ button{border:0;background:#1769d2;color:white;padding:12px 16px;border-radius:9
 #msg{padding:12px;border-radius:9px;background:#eaf2ff;color:#164b91;margin-bottom:14px}.app{border-top:1px solid #e5eaf0;padding:14px 0}.meta{color:#596579;font-size:14px;line-height:1.7}.status{display:inline-block;padding:5px 10px;background:#eef2ff;border-radius:20px;font-size:12px;font-weight:bold}
 </style></head><body>
 <header><div><h1>Rozgar Setu</h1><small>Job Seeker Dashboard</small></div><button class="secondary" id="logout">Logout</button></header>
-<div class="wrap"><section class="panel"><h2 id="welcome">Welcome</h2><div id="msg">Checking login…</div><button id="browse">Find Jobs</button></section>
+<div class="wrap"><section class="panel"><h2 id="welcome">Welcome</h2><div id="msg">Checking login…</div><button id="browse">Find Jobs</button> <button id="profileBtn" class="secondary">My Profile</button></section>
 <div class="cards"><div class="card"><h3>Applications</h3><div class="num" id="count">—</div></div><div class="card"><h3>Profile</h3><div class="num" style="font-size:20px" id="profile">—</div></div></div>
 <section class="panel"><h2>My Applications</h2><div id="apps"></div></section></div>
 <script type="module">
@@ -19,7 +19,7 @@ import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasej
 import{getFirestore,doc,getDoc,collection,query,where,getDocs}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-document.getElementById("browse").onclick=()=>location.href="jobs.html";document.getElementById("logout").onclick=async()=>{await signOut(auth);location.href="login.html";};
+document.getElementById("browse").onclick=()=>location.href="jobs.html";document.getElementById("profileBtn").onclick=()=>location.href="profile.html";document.getElementById("logout").onclick=async()=>{await signOut(auth);location.href="login.html";};
 onAuthStateChanged(auth,async user=>{if(!user){location.href="login.html";return;}try{const u=await getDoc(doc(db,"users",user.uid));if(!u.exists()||u.data().role!=="jobSeeker"){location.href="login.html";return;}
 const data=u.data();document.getElementById("welcome").textContent="Welcome, "+(data.fullName||"Job Seeker");document.getElementById("msg").textContent="Signed in as "+user.email;
 const profileSnap=await getDoc(doc(db,"jobSeekers",user.uid));document.getElementById("profile").textContent=profileSnap.exists()?"Profile available":"Profile incomplete";
