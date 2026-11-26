@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rozgar Setu | Find Opportunities. Connect Talent.</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f5f7fb;color:#1f2937}
+header{background:#fff;padding:16px 5%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;box-shadow:0 2px 10px #00008}
+.logo{font-size:24px;font-weight:bold;color:#1769aa}
+nav a{margin:8px;text-decoration:none;color:#333;font-size:14px}
+.hero{background:linear-gradient(135deg,#135ca8,#237fce);color:white;text-align:center;padding:55px 20px}
+.hero h1{font-size:32px;margin-bottom:15px}
+.hero p{font-size:17px;margin-bottom:25px}
+.search{background:white;max-width:750px;margin:auto;padding:12px;border-radius:12px;display:flex;flex-wrap:wrap;gap:10px}
+.search input{flex:1;min-width:150px;padding:14px;border:1px solid #ddd;border-radius:8px;font-size:15px}
+button{background:#ff9f1c;border:0;padding:13px 20px;border-radius:8px;font-weight:bold;cursor:pointer;color:#222}
+.section{padding:35px 5%}
+.section h2{text-align:center;margin-bottom:25px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.card{background:white;padding:22px;border-radius:14px;box-shadow:0 3px 12px #00000010}
+.card h3{margin-bottom:10px;color:#1769aa}
+.card p{color:#666;line-height:1.6;font-size:14px}
+.category{display:block;text-decoration:none;color:#333;background:white;border-radius:12px;padding:20px;text-align:center;box-shadow:0 2px 8px #00000010}
+.category:hover{background:#eaf3ff}
+.job{background:white;border-radius:12px;padding:20px;margin-bottom:15px;box-shadow:0 2px 10px #00000010}
+.job h3{color:#1769aa;margin-bottom:10px}
+.job p{font-size:14px;color:#555;margin:6px 0}
+.job button{margin-top:12px;background:#1769aa;color:white}
+.tag{display:inline-block;background:#e8f2ff;color:#1769aa;padding:5px 10px;border-radius:20px;font-size:12px;margin-top:8px}
+footer{background:#172a45;color:white;text-align:center;padding:25px}
+footer p{margin:8px}
+@media(max-width:600px){
+header{justify-content:center}
+nav{text-align:center}
+.hero h1{font-size:26px}
+.search{flex-direction:column}
+.search input,.search button{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">🌉 Rozgar Setu</div>
+<nav>
+<a href="#">Home</a>
+<a href="#jobs">Find Jobs</a>
+<a href="#employers">Employers</a>
+<a href="#seekers">Job Seekers</a>
+<a href="#about">About Us</a>
+<a href="#contact">Contact</a>
+</nav>
+</header>
+
+<section class="hero">
+<h1>Find Opportunities. Connect Talent.</h1>
+<p>Your bridge to better career opportunities.</p>
+
+<div class="search">
+<input type="text" id="keyword" placeholder="Job title, skills or company">
+<input type="text" id="location" placeholder="Location">
+<button onclick="searchJobs()">Search Jobs</button>
+</div>
+</section>
+
+<section class="section">
+<h2>Explore Job Categories</h2>
+<div class="grid">
+<a class="category" href="#jobs">💻 IT & Computer</a>
+<a class="category" href="#jobs">🏢 Office & Administration</a>
+<a class="category" href="#jobs">🏥 Healthcare</a>
+<a class="category" href="#jobs">🎓 Education</a>
+<a class="category" href="#jobs">🏭 Manufacturing</a>
+<a class="category" href="#jobs">🛒 Sales & Marketing</a>
+<a class="category" href="#jobs">🚚 Transport & Logistics</a>
+<a class="category" href="#jobs">🔧 Skilled Jobs</a>
+</div>
+</section>
+
+<section class="section" id="jobs">
+<h2>Latest Jobs</h2>
+<div id="jobList">
+<div class="job">
+<h3>Welcome to Rozgar Setu</h3>
+<p>Latest job opportunities will appear here.</p>
+<span class="tag">Coming Soon</span>
+</div>
+</div>
+</section>
+
+<section class="section" id="employers">
+<h2>For Employers</h2>
+<div class="grid">
+<div class="card">
+<h3>Post Jobs for Free</h3>
+<p>Register your organization and publish job vacancies to connect with suitable candidates.</p>
+</div>
+<div class="card">
+<h3>Manage Applications</h3>
+<p>Review applications, shortlist candidates and manage your recruitment process.</p>
+</div>
+<div class="card">
+<h3>Find Suitable Candidates</h3>
+<p>Discover talent and manage your hiring process through one platform.</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="seekers">
+<h2>For Job Seekers</h2>
+<div class="grid">
+<div class="card">
+<h3>Create Your Profile</h3>
+<p>Build your professional profile and showcase your education, skills and experience.</p>
+</div>
+<div class="card">
+<h3>Find Opportunities</h3>
+<p>Explore job opportunities across India according to your skills and interests.</p>
+</div>
+<div class="card">
+<h3>Track Applications</h3>
+<p>Keep track of your job applications and recruitment progress.</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="about">
+<h2>About Rozgar Setu</h2>
+<div class="card">
+<p style="text-align:center;line-height:1.8">
+Rozgar Setu is a platform designed to connect job seekers with employers.
+Our mission is to make job discovery, recruitment and career opportunities
+accessible through a simple digital platform.
+</p>
+</div>
+</section>
+
+<footer id="contact">
+<p><strong>Rozgar Setu</strong></p>
+<p>Find Opportunities. Connect Talent.</p>
+<p>Connecting Employers and Job Seekers</p>
+<p>© 2026 Rozgar Setu</p>
+</footer>
+
+<script>
+function searchJobs(){
+let keyword=document.getElementById('keyword').value.trim();
+let location=document.getElementById('location').value.trim();
+if(!keyword && !location){
+alert("Please enter a job title or location.");
+return;
+}
+alert("Job search system will be connected in the next development phase.");
+}
+</script>
+
+</body>
+</html>
