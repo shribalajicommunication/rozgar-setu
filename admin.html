@@ -15,6 +15,7 @@ input,button{font-size:15px;padding:10px;border-radius:8px}input{border:1px soli
 table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;vertical-align:top}th{background:#f8fafc}
 .tablewrap{overflow-x:auto}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{font-weight:bold}.empty{padding:20px;text-align:center;color:#64748b}
 #adminContent{display:none}#loginPanel{max-width:440px;margin:45px auto}
+.modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:1000;padding:16px;overflow:auto}.modalbox{background:white;max-width:650px;margin:35px auto;border-radius:14px;padding:20px;box-shadow:0 10px 35px #0003}.modalbox h2{margin-top:0}.profilegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.profileitem{background:#f8fafc;padding:12px;border-radius:8px;overflow-wrap:anywhere}.profileitem.full{grid-column:1/-1}.profileitem label{display:block;font-size:12px;color:#64748b;margin-bottom:5px}.profileitem div{white-space:pre-wrap}@media(max-width:600px){.profilegrid{grid-template-columns:1fr}.profileitem.full{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -28,9 +29,10 @@ table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;
 <section id="adminContent">
 <div class="stats"><div class="stat">Pending Jobs<b id="pendingJobs">—</b></div><div class="stat">Approved Jobs<b id="approvedJobs">—</b></div><div class="stat">Employers<b id="employerCount">—</b></div><div class="stat">Job Seekers<b id="seekerCount">—</b></div></div>
 <section class="panel"><h2>Pending Job Approvals</h2><p>Approve or reject employer-submitted jobs.</p><div class="tablewrap"><table><thead><tr><th>Job / Employer</th><th>Details</th><th>Actions</th></tr></thead><tbody id="pendingList"></tbody></table></div></section>
-<section class="panel"><h2>Employer Verification</h2><div class="tablewrap"><table><thead><tr><th>Organization</th><th>Contact</th><th>Status</th><th>Action</th></tr></thead><tbody id="employerList"></tbody></table></div></section>
+<section class="panel"><h2>Employer Verification</h2><div class="tablewrap"><table><thead><tr><th>Organization</th><th>Contact</th><th>Status</th><th>Profile</th><th>Action</th></tr></thead><tbody id="employerList"></tbody></table></div></section>
 </section>
 </main>
+<div id="profileModal" class="modal"><div class="modalbox"><div class="row" style="justify-content:space-between"><h2>Employer Profile</h2><button id="closeProfile" class="secondary">Close</button></div><p id="profileLoading">Loading profile...</p><div id="profileDetails" class="profilegrid"></div></div></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -40,6 +42,8 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 $("loginBtn").onclick=async()=>{ $("loginMsg").textContent="Signing in...";try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("loginMsg").textContent=e.message}};
 $("logoutBtn").onclick=()=>signOut(auth);
+$("closeProfile").onclick=()=>$("profileModal").style.display="none";
+$("profileModal").onclick=e=>{if(e.target===$("profileModal"))$("profileModal").style.display="none"};
 onAuthStateChanged(auth,async user=>{if(!user){$("loginPanel").style.display="block";$("adminContent").style.display="none";$("logoutBtn").style.display="none";return}
 try{const snap=await getDoc(doc(db,"users",user.uid));if(!snap.exists()||snap.data().role!=="admin"){await signOut(auth);$("loginMsg").textContent="Access denied: this account is not assigned the admin role.";return}
 $("loginPanel").style.display="none";$("adminContent").style.display="block";$("logoutBtn").style.display="inline-block";await loadAdmin();
@@ -48,23 +52,21 @@ async function loadAdmin(){
 const jobsSnap=await getDocs(collection(db,"jobs"));let pending=[],approved=0;
 jobsSnap.forEach(d=>{const x=d.data();if(x.status==="pending")pending.push({id:d.id,...x});if(x.status==="approved")approved++});
 $("pendingJobs").textContent=pending.length;$("approvedJobs").textContent=approved;
-$("pendingList").innerHTML=pending.length?pending.map(j=>`<tr><td><b>${esc(j.title||"Untitled")}</b><br>${esc(j.organizationName||"")}<br><small>${esc(j.employerEmail||"")}</small></td><td>${esc(j.location||"")}<br>${esc(j.category||"")}<br>Vacancies: ${esc(j.vacancies??"")}<br>Last date: ${esc(j.lastDate||"")}<br><details><summary>Description</summary>${esc(j.description||"")}</details></td><td><button class="success" data-approve="${j.id}">Approve</button> <button class="danger" data-reject="${j.id}">Reject</button></td></tr>`).join(""):'<tr><td colspan="3" class="empty">No pending jobs</td></tr>';
+$("pendingList").innerHTML=pending.length?pending.map(j=>`<tr><td><b>${esc(j.title||"Untitled")}</b><br>${esc(j.organizationName||"")}<br><small>${esc(j.employerEmail||"")}</small></td><td>${esc(j.location||"")}<br>${esc(j.category||"")}<br>Vacancies: ${esc(j.vacancies??"")}<br>Last date: ${esc(j.lastDate||"")}<br><details><summary>Description</summary>${esc(j.description||"")}</details></td><td><button class="success" data-approve="${j.id}">Approve</button> <button class="danger" data-reject="${j.id}">Reject</button></td></tr>`).join(''):'<tr><td colspan="3" class="empty">No pending jobs</td></tr>';
 $("pendingList").querySelectorAll("[data-approve]").forEach(b=>b.onclick=async()=>{if(confirm("Approve this job?")){await updateDoc(doc(db,"jobs",b.dataset.approve),{status:"approved"});await loadAdmin()}});
 $("pendingList").querySelectorAll("[data-reject]").forEach(b=>b.onclick=async()=>{if(confirm("Reject this job?")){await updateDoc(doc(db,"jobs",b.dataset.reject),{status:"rejected"});await loadAdmin()}});
 const users=await getDocs(collection(db,"users"));let employers=[],seekers=0;users.forEach(d=>{const u=d.data();if(u.role==="employer")employers.push({id:d.id,...u});if(["jobSeeker","jobseeker","job_seeker"].includes(u.role))seekers++});
 $("employerCount").textContent=employers.length;$("seekerCount").textContent=seekers;
-$("employerList").innerHTML=employers.length?employers.map(e=>`<tr><td>${esc(e.organizationName||"—")}<br><small>${esc(e.email||"")}</small></td><td>${esc(e.contactPerson||"")}<br>${esc(e.mobile||"")}</td><td>${esc(e.verificationStatus||"pending")}</td><td>${e.verificationStatus==="approved"?'<span class="status">Approved</span>':`<button class="success" data-emp="${e.id}">Verify</button>`}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">No employers found</td></tr>';
-$("employerList").querySelectorAll("[data-emp]").forEach(b=>b.onclick=async()=>{
- if(confirm("Verify this employer?")){
-  b.disabled=true;b.textContent="Updating...";
-  try{
-   const uid=b.dataset.emp;
-   await updateDoc(doc(db,"users",uid),{verificationStatus:"approved"});
-   try{await setDoc(doc(db,"employers",uid),{verificationStatus:"approved"},{merge:true});}catch(profileErr){console.warn("Employer profile status update:",profileErr)}
-   alert("Employer verified successfully.");await loadAdmin();
-  }catch(err){alert("Verification failed: "+err.message);b.disabled=false;b.textContent="Verify";}
- }
-});
+$("employerList").innerHTML=employers.length?employers.map(e=>`<tr><td>${esc(e.organizationName||"—")}<br><small>${esc(e.email||"")}</small></td><td>${esc(e.contactPerson||"")}<br>${esc(e.mobile||"")}</td><td>${esc(e.verificationStatus||"pending")}</td><td><button class="secondary" data-profile="${e.id}">View Profile</button></td><td>${e.verificationStatus==="approved"?'<span class="status">Approved</span>':`<button class="success" data-emp="${e.id}">Verify</button>`}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">No employers found</td></tr>';
+$("employerList").querySelectorAll("[data-profile]").forEach(b=>b.onclick=()=>showEmployerProfile(b.dataset.profile));
+$("employerList").querySelectorAll("[data-emp]").forEach(b=>b.onclick=async()=>{if(confirm("Verify this employer?")){b.disabled=true;b.textContent="Updating...";try{const uid=b.dataset.emp;await updateDoc(doc(db,"users",uid),{verificationStatus:"approved"});try{await setDoc(doc(db,"employers",uid),{verificationStatus:"approved"},{merge:true})}catch(profileErr){console.warn("Employer profile status update:",profileErr)}alert("Employer verified successfully.");await loadAdmin()}catch(err){alert("Verification failed: "+err.message);b.disabled=false;b.textContent="Verify"}}});
+}
+async function showEmployerProfile(uid){
+$("profileModal").style.display="block";$("profileLoading").style.display="block";$("profileLoading").textContent="Loading profile...";$("profileDetails").innerHTML="";
+try{const snap=await getDoc(doc(db,"employers",uid));const p=snap.exists()?snap.data():{};
+const fields=[["Organization Name",p.organizationName],["Contact Person",p.contactPerson],["Mobile",p.mobile],["Email",p.email],["Website",p.website],["Organization Address",p.organizationAddress||p.address],["About Organization",p.aboutOrganization||p.about],["Verification Status",p.verificationStatus||"pending"]];
+$("profileLoading").style.display="none";$("profileDetails").innerHTML=fields.map((f,i)=>`<div class="profileitem ${i>=5?'full':''}"><label>${esc(f[0])}</label><div>${esc(f[1]||"Not provided")}</div></div>`).join("");
+}catch(err){$("profileLoading").textContent="Unable to load profile: "+err.message}
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 </script>
