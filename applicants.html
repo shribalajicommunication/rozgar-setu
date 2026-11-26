@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applicants | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#173b70;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:22px}header small{opacity:.85}.wrap{max-width:1100px;margin:auto;padding:20px}
+.panel{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 12px #0000000b}
+#msg{padding:12px;border-radius:9px;background:#eaf2ff;color:#164b91;margin-bottom:15px}
+.jobbox{border:1px solid #dce4ee;border-radius:12px;padding:15px;margin:14px 0}
+.jobbox h3{margin:0 0 10px}.app{border-top:1px solid #e5eaf0;padding:14px 0}
+.meta{font-size:14px;color:#586579;line-height:1.7}.status{display:inline-block;border-radius:18px;background:#eef2ff;padding:5px 9px;font-size:12px;font-weight:bold}
+select,button{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #cbd5e1}button{background:#1769d2;color:white;border:0;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{text-align:center;color:#64748b;padding:24px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+</style></head><body>
+<header><div><h1>Rozgar Setu</h1><small>Applicants</small></div><button class="secondary" id="back">Dashboard</button></header>
+<div class="wrap"><section class="panel"><h2>Applications for My Jobs</h2><div id="msg">Checking login…</div><div id="content"></div></section></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,getDoc,collection,query,where,getDocs,updateDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),content=document.getElementById("content"),msg=document.getElementById("msg");
+document.getElementById("back").onclick=()=>location.href="employer-dashboard.html";
+const statusOptions=["Applied","Under Review","Shortlisted","Interview","Selected","Rejected"];
+onAuthStateChanged(auth,async user=>{if(!user){location.href="login.html";return;}
+try{const us=await getDoc(doc(db,"users",user.uid));if(!us.exists()||us.data().role!=="employer"){location.href="login.html";return;}
+msg.textContent="Signed in as "+user.email;
+const jobs=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
+if(jobs.empty){content.innerHTML='<div class="empty">No job posts found yet.</div>';return;}
+for(const jobDoc of jobs.docs){const j=jobDoc.data(),jobDiv=document.createElement("section");jobDiv.className="jobbox";
+const title=document.createElement("h3");title.textContent=j.title||"Job";
+const details=document.createElement("div");details.className="meta";details.textContent=(j.location||"")+" • "+(j.category||"")+" • Status: "+(j.status||"pending");
+jobDiv.append(title,details);const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",jobDoc.id)));
+if(apps.empty){const no=document.createElement("p");no.className="empty";no.textContent="No applications received for this job.";jobDiv.append(no);}
+for(const appDoc of apps.docs){const a=appDoc.data(),row=document.createElement("div");row.className="app";
+const nm=document.createElement("h4");nm.textContent=a.fullName||a.name||a.applicantName||"Applicant";
+const info=document.createElement("div");info.className="meta";info.textContent="Email: "+(a.email||a.applicantEmail||"Not provided")+" | Mobile: "+(a.mobile||a.phone||"Not provided")+" | Applied: "+(a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString():"—");
+const current=document.createElement("span");current.className="status";current.textContent=a.status||"Applied";
+const sel=document.createElement("select");statusOptions.forEach(v=>{const op=document.createElement("option");op.value=v;op.textContent=v;sel.append(op);});sel.value=statusOptions.includes(a.status)?a.status:"Applied";
+const save=document.createElement("button");save.textContent="Update Status";save.onclick=async()=>{save.disabled=true;try{await updateDoc(doc(db,"applications",appDoc.id),{status:sel.value});current.textContent=sel.value;save.textContent="Updated";setTimeout(()=>save.textContent="Update Status",1500);}catch(e){alert("Status update failed. Check Firestore rules.");save.disabled=false;}};
+const controls=document.createElement("div");controls.className="controls";controls.append(sel,save);row.append(nm,info,current,controls);jobDiv.append(row);}
+content.append(jobDiv);}
+}catch(e){console.error(e);msg.textContent="Could not load applicants. Check Firestore collection names and rules.";}}
+);
+</script></body></html>
