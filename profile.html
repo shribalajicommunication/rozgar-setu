@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rozgar Setu | Job Seeker Profile</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#172033}
+header{background:#172554;color:#fff;padding:18px}header h1{margin:0;font-size:22px}header p{margin:6px 0 0}
+main{max-width:850px;margin:auto;padding:18px}.card{background:#fff;border-radius:14px;padding:20px;margin:16px 0;box-shadow:0 2px 12px #00000008}
+label{display:block;font-weight:600;margin:12px 0 6px}input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}textarea{min-height:100px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}button{background:#2563eb;color:white;border:0;padding:12px 18px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}.muted{color:#64748b;font-size:14px}#msg{margin-top:12px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>Rozgar Setu – My Profile</h1><p>Build your profile to improve your job opportunities.</p></header>
+<main><div class="card"><h2>Job Seeker Profile</h2><p class="muted">Complete the information below. Email is linked to your account.</p>
+<form id="profileForm">
+<div class="grid">
+<div><label>Full Name *</label><input id="fullName" required></div>
+<div><label>Mobile Number *</label><input id="mobile" type="tel" required maxlength="15"></div>
+<div><label>Email</label><input id="email" type="email" readonly></div>
+<div><label>Date of Birth</label><input id="dob" type="date"></div>
+<div><label>Gender</label><select id="gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
+<div><label>Highest Qualification</label><input id="qualification" placeholder="e.g. 12th, Graduate, ITI"></div>
+<div><label>Experience</label><select id="experience"><option value="">Select</option><option>Fresher</option><option>Less than 1 year</option><option>1–2 years</option><option>3–5 years</option><option>5+ years</option></select></div>
+<div><label>Skills</label><input id="skills" placeholder="e.g. Computer, Excel, Sales"></div>
+</div>
+<label>Address</label><textarea id="address" placeholder="Your address"></textarea>
+<label>About Me</label><textarea id="about" placeholder="Brief introduction"></textarea>
+<button type="submit" id="saveBtn">Save Profile</button><p id="msg"></p>
+</form></div></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const ids=["fullName","mobile","dob","gender","qualification","experience","skills","address","about"];
+let user=null;
+onAuthStateChanged(auth,async u=>{if(!u){document.getElementById("msg").textContent="Please login first. Redirecting...";setTimeout(()=>location.href="login.html",1200);return}
+user=u;document.getElementById("email").value=u.email||"";
+try{const snap=await getDoc(doc(db,"jobSeekers",u.uid));if(snap.exists()){const d=snap.data();ids.forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});if(d.fullName)document.getElementById("fullName").value=d.fullName;}}catch(e){document.getElementById("msg").textContent="Could not load profile: "+e.message}});
+document.getElementById("profileForm").addEventListener("submit",async ev=>{ev.preventDefault();if(!user)return;const data={uid:user.uid,email:user.email||"",updatedAt:serverTimestamp()};ids.forEach(id=>data[id]=document.getElementById(id).value.trim());document.getElementById("saveBtn").disabled=true;document.getElementById("msg").textContent="Saving...";
+try{await setDoc(doc(db,"jobSeekers",user.uid),data,{merge:true});await setDoc(doc(db,"users",user.uid),{fullName:data.fullName,mobile:data.mobile},{merge:true});document.getElementById("msg").textContent="Profile saved successfully!";}catch(e){document.getElementById("msg").textContent="Save failed: "+e.message;}finally{document.getElementById("saveBtn").disabled=false}});
+</script>
+</body></html>
