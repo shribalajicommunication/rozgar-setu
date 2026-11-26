@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Jobs | Rozgar Setu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6fb;color:#172033}
+header{background:#173b70;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0}header small{opacity:.85}.wrap{max-width:1050px;margin:auto;padding:20px}
+.panel{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 12px #0000000b;margin-bottom:16px}
+#msg{padding:12px;border-radius:9px;background:#eaf2ff;color:#164b91;margin-bottom:15px}
+.job{border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:12px 0}.job h3{margin:0 0 10px}
+.meta{color:#596579;line-height:1.7;font-size:14px}.status{display:inline-block;background:#fff2cc;color:#745300;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;text-transform:capitalize}
+button{border:0;background:#1769d2;color:white;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}
+.secondary{background:#536477}.empty{color:#64748b;text-align:center;padding:25px}
+</style></head>
+<body><header><div><h1>Rozgar Setu</h1><small>My Jobs</small></div><button class="secondary" id="back">Dashboard</button></header>
+<div class="wrap"><section class="panel"><h2>My Job Posts</h2><div id="msg">Checking login…</div><div id="jobs"></div></section></div>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,getDoc,collection,query,where,getDocs}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const msg=document.getElementById("msg"),container=document.getElementById("jobs");
+document.getElementById("back").onclick=()=>location.href="employer-dashboard.html";
+onAuthStateChanged(auth,async user=>{if(!user){location.href="login.html";return;}
+try{const u=await getDoc(doc(db,"users",user.uid));if(!u.exists()||u.data().role!=="employer"){location.href="login.html";return;}
+msg.textContent="Signed in as "+user.email;
+const snap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
+if(snap.empty){container.innerHTML='<div class="empty">You have not posted any jobs yet.</div>';return;}
+snap.forEach(d=>{const j=d.data();const div=document.createElement("div");div.className="job";
+const title=document.createElement("h3");title.textContent=j.title||"Untitled Job";
+const status=document.createElement("span");status.className="status";status.textContent=j.status||"pending";
+const meta=document.createElement("div");meta.className="meta";meta.textContent="Location: "+(j.location||"—")+" | Category: "+(j.category||"—")+" | Vacancies: "+(j.vacancies||"—")+" | Last date: "+(j.lastDate||"—");
+const desc=document.createElement("p");desc.textContent=j.description||"";
+div.append(title,status,meta,desc);container.appendChild(div);});
+}catch(e){console.error(e);msg.textContent="Unable to load job posts. Please check Firestore rules and connectivity.";}}
+});
+</script></body></html>
