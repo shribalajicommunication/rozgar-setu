@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register - Rozgar Setu</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #222;
+}
+
+header {
+  background: #1769aa;
+  color: white;
+  text-align: center;
+  padding: 22px 15px;
+}
+
+header h1 {
+  margin: 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+h2 {
+  text-align: center;
+  color: #1769aa;
+}
+
+.role-select {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.role-select button {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid #1769aa;
+  background: white;
+  color: #1769aa;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.role-select button.active {
+  background: #1769aa;
+  color: white;
+}
+
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  margin-top: 7px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 25px;
+  padding: 15px;
+  background: #ff9800;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.hidden {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌉 Rozgar Setu</h1>
+  <p>Find Opportunities. Connect Talent.</p>
+</header>
+
+<div class="container">
+
+<h2>Create Your Account</h2>
+
+<div class="role-select">
+  <button id="jobBtn" class="active" onclick="selectRole('jobSeeker')">
+    Job Seeker
+  </button>
+
+  <button id="empBtn" onclick="selectRole('employer')">
+    Employer
+  </button>
+</div>
+
+<form id="registerForm">
+
+<div id="jobFields">
+
+<label>Full Name</label>
+<input type="text" id="jobName" placeholder="Enter your full name">
+
+<label>Mobile Number</label>
+<input type="tel" id="jobMobile" placeholder="Enter mobile number">
+
+</div>
+
+<div id="empFields" class="hidden">
+
+<label>Company / Institution Name</label>
+<input type="text" id="companyName" placeholder="Enter company name">
+
+<label>Contact Person</label>
+<input type="text" id="contactPerson" placeholder="Enter contact person name">
+
+<label>Mobile Number</label>
+<input type="tel" id="empMobile" placeholder="Enter mobile number">
+
+</div>
+
+<label>Email Address</label>
+<input type="email" id="email" placeholder="Enter email address" required>
+
+<label>Password</label>
+<input type="password" id="password" placeholder="Create password" required>
+
+<label>Confirm Password</label>
+<input type="password" id="confirmPassword" placeholder="Confirm password" required>
+
+<button type="submit" class="submit-btn">
+Create Account
+</button>
+
+</form>
+
+<p style="text-align:center;margin-top:20px">
+Already registered? <a href="login.html">Login</a>
+</p>
+
+</div>
+
+<footer>
+  © 2026 Rozgar Setu
+</footer>
+
+<script>
+
+let selectedRole = "jobSeeker";
+
+function selectRole(role) {
+  selectedRole = role;
+
+  document.getElementById("jobFields").classList.toggle("hidden", role !== "jobSeeker");
+  document.getElementById("empFields").classList.toggle("hidden", role !== "employer");
+
+  document.getElementById("jobBtn").classList.toggle("active", role === "jobSeeker");
+  document.getElementById("empBtn").classList.toggle("active", role === "employer");
+}
+
+document.getElementById("registerForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  alert("Registration system will be connected to Firebase in the next step.");
+});
+
+</script>
+
+</body>
+</html>
