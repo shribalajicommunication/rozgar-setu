@@ -26,6 +26,9 @@ button.secondary{background:#536477}.notice{margin:14px 0;padding:12px;border-ra
 <div class="cards">
 <div class="card"><h3>Total Jobs</h3><div class="num" id="jobCount">—</div></div>
 <div class="card"><h3>Active Jobs</h3><div class="num" id="activeJobCount">—</div></div>
+<div class="card"><h3>Expired Jobs</h3><div class="num" id="expiredJobCount">—</div></div>
+<div class="card"><h3>Closed Jobs</h3><div class="num" id="closedJobCount">—</div></div>
+<div class="card"><h3>Pending Approval</h3><div class="num" id="pendingJobCount">—</div></div>
 <div class="card"><h3>Total Applicants</h3><div class="num" id="appCount">—</div></div>
 <div class="card"><h3>Shortlisted</h3><div class="num" id="shortCount">—</div></div>
 <div class="card"><h3>Interviews Scheduled</h3><div class="num" id="interviewCount">—</div></div>
@@ -56,6 +59,7 @@ const firebaseConfig = {
 const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
 const statusEl=document.getElementById("status"), notice=document.getElementById("notice");
 function showNotice(msg){notice.textContent=msg;notice.style.display="block";}
+function isPastLastDate(j){return !!j.lastDate && j.lastDate < new Date().toISOString().slice(0,10);}
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href="login.html";return;}
  try{
@@ -68,14 +72,21 @@ onAuthStateChanged(auth,async user=>{
   document.getElementById("verifyStatus").textContent=employerSnap.exists()?(employerSnap.data().verificationStatus||"Pending"):"Pending";
   const jobsSnap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
   document.getElementById("jobCount").textContent=jobsSnap.size;
-  let total=0,shortlisted=0,interviews=0,selected=0,active=0;
+  let total=0,shortlisted=0,interviews=0,selected=0,active=0,expired=0,closed=0,pending=0;
   for(const job of jobsSnap.docs){
-    const jd=job.data();if(jd.status==="approved")active++;
+    const jd=job.data();
+    if(jd.status==="closed"){closed++;}
+    else if(jd.status==="expired"||isPastLastDate(jd)){expired++;}
+    else if(jd.status==="approved"){active++;}
+    else if(jd.status==="pending"){pending++;}
     const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",job.id)));
     total+=apps.size;
     for(const ap of apps.docs){const ad=ap.data();if(ad.status==="Shortlisted")shortlisted++;if(ad.status==="Selected")selected++;if(ad.interviewDate&&ad.interviewTime)interviews++;}
   }
   document.getElementById("activeJobCount").textContent=active;
+  document.getElementById("expiredJobCount").textContent=expired;
+  document.getElementById("closedJobCount").textContent=closed;
+  document.getElementById("pendingJobCount").textContent=pending;
   document.getElementById("appCount").textContent=total;
   document.getElementById("shortCount").textContent=shortlisted;
   document.getElementById("interviewCount").textContent=interviews;
