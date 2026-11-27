@@ -8,7 +8,7 @@
 header{background:#173b70;color:white;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 header h1{font-size:22px;margin:0}header small{opacity:.85}.wrap{max-width:1100px;margin:auto;padding:20px}
 .welcome{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 2px 10px #0000000b}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:16px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:16px 0}
 .card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 10px #0000000b}.card h3{font-size:14px;color:#667085;margin:0 0 12px}.num{font-size:30px;font-weight:bold;color:#173b70}
 .actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .action{background:white;padding:20px;border-radius:14px;border:1px solid #e6eaf2}.action h3{margin-top:0}
@@ -24,8 +24,12 @@ button.secondary{background:#536477}.notice{margin:14px 0;padding:12px;border-ra
 <div id="status">Checking your login…</div>
 <section class="welcome"><h2 id="welcome">Welcome</h2><div id="org">Loading organization profile…</div></section>
 <div class="cards">
-<div class="card"><h3>My Job Posts</h3><div class="num" id="jobCount">—</div></div>
-<div class="card"><h3>Applications Received</h3><div class="num" id="appCount">—</div></div>
+<div class="card"><h3>Total Jobs</h3><div class="num" id="jobCount">—</div></div>
+<div class="card"><h3>Active Jobs</h3><div class="num" id="activeJobCount">—</div></div>
+<div class="card"><h3>Total Applicants</h3><div class="num" id="appCount">—</div></div>
+<div class="card"><h3>Shortlisted</h3><div class="num" id="shortCount">—</div></div>
+<div class="card"><h3>Interviews Scheduled</h3><div class="num" id="interviewCount">—</div></div>
+<div class="card"><h3>Selected Candidates</h3><div class="num" id="selectedCount">—</div></div>
 <div class="card"><h3>Account Status</h3><div class="num" style="font-size:20px" id="verifyStatus">—</div></div>
 </div>
 <div class="actions">
@@ -62,15 +66,20 @@ onAuthStateChanged(auth,async user=>{
   document.getElementById("org").textContent="Contact person: "+(data.contactPerson||"Not provided")+" • "+user.email;
   const employerSnap=await getDoc(doc(db,"employers",user.uid));
   document.getElementById("verifyStatus").textContent=employerSnap.exists()?(employerSnap.data().verificationStatus||"Pending"):"Pending";
-  // Counts are read from jobs/applications collections; these require matching Firestore rules.
   const jobsSnap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
   document.getElementById("jobCount").textContent=jobsSnap.size;
-  let total=0;
+  let total=0,shortlisted=0,interviews=0,selected=0,active=0;
   for(const job of jobsSnap.docs){
+    const jd=job.data();if(jd.status==="approved")active++;
     const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",job.id)));
     total+=apps.size;
+    for(const ap of apps.docs){const ad=ap.data();if(ad.status==="Shortlisted")shortlisted++;if(ad.status==="Selected")selected++;if(ad.interviewDate&&ad.interviewTime)interviews++;}
   }
+  document.getElementById("activeJobCount").textContent=active;
   document.getElementById("appCount").textContent=total;
+  document.getElementById("shortCount").textContent=shortlisted;
+  document.getElementById("interviewCount").textContent=interviews;
+  document.getElementById("selectedCount").textContent=selected;
   statusEl.textContent="Logged in as Employer • "+user.email;
  }catch(e){statusEl.textContent="Dashboard loaded, but some data could not be read. Check Firestore rules/collection field names.";console.error(e);}
 });
