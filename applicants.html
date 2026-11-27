@@ -12,6 +12,7 @@ h1{margin:0;font-size:22px}header small{opacity:.85}.wrap{max-width:1100px;margi
 .meta{font-size:14px;color:#586579;line-height:1.7}.status{display:inline-block;border-radius:18px;background:#eef2ff;padding:5px 9px;font-size:12px;font-weight:bold}
 select,button{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #cbd5e1}button{background:#1769d2;color:white;border:0;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{text-align:center;color:#64748b;padding:24px}
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#f8fafc;border:1px solid #dce4ee;border-radius:10px}.filterbar input,.filterbar select{font:inherit;padding:9px;border:1px solid #cbd5e1;border-radius:8px;min-width:150px;flex:1}.filtercount{font-size:13px;color:#64748b;margin:5px 0}
 .modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10;padding:16px;overflow:auto}.modalbox{background:white;max-width:650px;margin:30px auto;border-radius:14px;padding:20px}.modalbox h2{margin-top:0}.profilegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.field{background:#f8fafc;padding:12px;border-radius:9px;overflow-wrap:anywhere}.field b{display:block;color:#475569;font-size:13px;margin-bottom:5px}.wide{grid-column:1/-1}.modalhead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
 @media print{body{background:white}.print-hidden{display:none!important}}
 </style></head><body>
@@ -45,15 +46,30 @@ for(const jobDoc of selectedJobs){const j=jobDoc.data(),jobDiv=document.createEl
 const title=document.createElement("h3");title.textContent=j.title||"Job";
 const details=document.createElement("div");details.className="meta";details.textContent=(j.location||"")+" • "+(j.category||"")+" • Status: "+(j.status||"pending");jobDiv.append(title,details);
 const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",jobDoc.id)));
+// Per-job applicant filters
+const filterbar=document.createElement("div");filterbar.className="filterbar";
+filterbar.innerHTML='<input type="search" class="f-name" placeholder="Search name, email, mobile"><input type="search" class="f-qual" placeholder="Qualification"><input type="search" class="f-exp" placeholder="Experience"><select class="f-status"><option value="">All Statuses</option>'+statusOptions.map(x=>'<option>'+esc(x)+'</option>').join('')+'</select>';
+const filtercount=document.createElement("div");filtercount.className="filtercount";filtercount.textContent="Applicants: "+apps.size;
+jobDiv.append(filterbar,filtercount);
 if(apps.empty){const no=document.createElement("p");no.className="empty";no.textContent="No applications received for this job.";jobDiv.append(no);}
 for(const appDoc of apps.docs){const a=appDoc.data(),row=document.createElement("div");row.className="app";
+let candidateProfile={};if(a.applicantId){try{const ps=await getDoc(doc(db,"jobSeekers",a.applicantId));if(ps.exists())candidateProfile=ps.data();}catch(e){console.warn("Candidate profile filter data unavailable",e);}}
+const filterName=(a.fullName||a.name||a.applicantName||candidateProfile.fullName||"").toLowerCase();
+const filterEmail=(a.email||a.applicantEmail||candidateProfile.email||"").toLowerCase();
+const filterMobile=(a.mobile||a.phone||candidateProfile.mobile||"").toLowerCase();
+const filterQual=(a.qualification||candidateProfile.qualification||"").toLowerCase();
+const filterExp=(a.experience||candidateProfile.experience||"").toLowerCase();
+row.dataset.name=filterName;row.dataset.email=filterEmail;row.dataset.mobile=filterMobile;row.dataset.qualification=filterQual;row.dataset.experience=filterExp;row.dataset.status=(a.status||"Applied");
 const nm=document.createElement("h4");nm.textContent=a.fullName||a.name||a.applicantName||"Applicant";
 const info=document.createElement("div");info.className="meta";info.textContent="Email: "+(a.email||a.applicantEmail||"Not provided")+" | Mobile: "+(a.mobile||a.phone||"Not provided")+" | Applied: "+(a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString():"—");
 const current=document.createElement("span");current.className="status";current.textContent=a.status||"Applied";
 const sel=document.createElement("select");statusOptions.forEach(v=>{const op=document.createElement("option");op.value=v;op.textContent=v;sel.append(op);});sel.value=statusOptions.includes(a.status)?a.status:"Applied";
-const save=document.createElement("button");save.textContent="Update Status";save.onclick=async()=>{save.disabled=true;try{await updateDoc(doc(db,"applications",appDoc.id),{status:sel.value});current.textContent=sel.value;save.textContent="Updated";setTimeout(()=>save.textContent="Update Status",1500);}catch(e){alert("Status update failed. Check Firestore rules.");save.disabled=false;}};
+const save=document.createElement("button");save.textContent="Update Status";save.onclick=async()=>{save.disabled=true;try{await updateDoc(doc(db,"applications",appDoc.id),{status:sel.value});current.textContent=sel.value;row.dataset.status=sel.value;save.textContent="Updated";setTimeout(()=>save.textContent="Update Status",1500);}catch(e){alert("Status update failed. Check Firestore rules.");save.disabled=false;}};
 const view=document.createElement("button");view.className="secondary";view.textContent="View Candidate Profile";view.onclick=()=>showProfile(a.applicantId,nm.textContent);
 const controls=document.createElement("div");controls.className="controls";controls.append(view,sel,save);row.append(nm,info,current,controls);jobDiv.append(row);}
+
+const doFilter=()=>{const n=filterbar.querySelector(".f-name").value.trim().toLowerCase(),qv=filterbar.querySelector(".f-qual").value.trim().toLowerCase(),ev=filterbar.querySelector(".f-exp").value.trim().toLowerCase(),sv=filterbar.querySelector(".f-status").value;let shown=0;jobDiv.querySelectorAll(".app").forEach(r=>{const ok=(!n||(r.dataset.name.includes(n)||r.dataset.email.includes(n)||r.dataset.mobile.includes(n)))&&(!qv||r.dataset.qualification.includes(qv))&&(!ev||r.dataset.experience.includes(ev))&&(!sv||r.dataset.status===sv);r.style.display=ok?"":"none";if(ok)shown++;});filtercount.textContent="Showing "+shown+" of "+apps.size+" applicants";};
+filterbar.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",doFilter));filterbar.querySelector(".f-status").addEventListener("change",doFilter);
 content.append(jobDiv);}
 }catch(e){console.error(e);msg.textContent="Could not load applicants. Check Firestore collection names and rules.";}}
 );
