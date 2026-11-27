@@ -9,38 +9,28 @@ h1{font-size:22px;margin:0}header small{opacity:.85}.wrap{max-width:1050px;margi
 #msg{padding:12px;border-radius:9px;background:#eaf2ff;color:#164b91;margin-bottom:15px;overflow-wrap:anywhere}
 .job{border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:12px 0}.job h3{margin:0 0 10px}
 .meta{color:#596579;line-height:1.7;font-size:14px}.status{display:inline-block;background:#fff2cc;color:#745300;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;text-transform:capitalize}
-button{border:0;background:#1769d2;color:white;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{color:#64748b;text-align:center;padding:25px}
+button{border:0;background:#1769d2;color:white;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{color:#64748b;text-align:center;padding:25px}.editbtn{margin-top:12px}
+.modal{display:none;position:fixed;inset:0;background:#0008;overflow:auto;padding:18px;z-index:10}.modalbox{background:white;max-width:700px;margin:20px auto;border-radius:14px;padding:20px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formgrid .full{grid-column:1/-1}label{display:block;font-weight:bold;font-size:14px;margin-bottom:5px}input,textarea,select{width:100%;font:inherit;padding:10px;border:1px solid #cbd5e1;border-radius:8px}textarea{min-height:110px;resize:vertical}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}@media(max-width:600px){.formgrid{grid-template-columns:1fr}.formgrid .full{grid-column:auto}}
 </style></head>
 <body><header><div><h1>Rozgar Setu</h1><small>My Jobs</small></div><button class="secondary" id="back">Dashboard</button></header>
 <div class="wrap"><section class="panel"><h2>My Job Posts</h2><div id="msg">Connecting to account…</div><div id="jobs"></div></section></div>
+<div class="modal" id="modal"><div class="modalbox"><h2>Edit Job</h2><form id="editForm"><div class="formgrid">
+<div><label for="title">Job Title</label><input id="title" required></div><div><label for="category">Category</label><input id="category" required></div>
+<div><label for="location">Location</label><input id="location" required></div><div><label for="qualification">Qualification</label><input id="qualification"></div>
+<div><label for="experience">Experience</label><input id="experience"></div><div><label for="salary">Salary</label><input id="salary"></div>
+<div><label for="vacancies">Vacancies</label><input id="vacancies" type="number" min="1" required></div><div><label for="lastDate">Last Date</label><input id="lastDate" type="date"></div>
+<div class="full"><label for="description">Job Description</label><textarea id="description"></textarea></div></div><div class="actions"><button id="save" type="submit">Save Changes</button><button type="button" class="secondary" id="cancel">Cancel</button></div><p id="editMsg"></p></form></div></div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import{getFirestore,doc,getDoc,collection,query,where,getDocs}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import{getFirestore,doc,getDoc,collection,query,where,getDocs,updateDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig={apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-const msg=document.getElementById("msg"),container=document.getElementById("jobs");
-document.getElementById("back").onclick=()=>location.href="employer-dashboard.html";
-function showError(text){msg.textContent=text;}
-let handled=false;
-onAuthStateChanged(auth,async user=>{
- if(handled)return;handled=true;
- if(!user){showError("No active login found. Please login again.");setTimeout(()=>location.href="login.html",1800);return;}
- try{
-  showError("Checking Employer account…");
-  const u=await getDoc(doc(db,"users",user.uid));
-  if(!u.exists()){showError("User record not found in Firestore. Please contact Admin.");return;}
-  if(u.data().role!=="employer"){showError("This page is for Employer accounts only.");setTimeout(()=>location.href="login.html",1800);return;}
-  showError("Signed in as "+(user.email||"Employer")+". Loading job posts…");
-  const snap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
-  if(snap.empty){showError("Signed in successfully. No job posts found.");container.innerHTML='<div class="empty">You have not posted any jobs yet.</div>';return;}
-  showError("Signed in as "+(user.email||"Employer")+". Your job posts:");
-  snap.forEach(d=>{const j=d.data(),div=document.createElement("div");div.className="job";
-   const title=document.createElement("h3");title.textContent=j.title||"Untitled Job";
-   const status=document.createElement("span");status.className="status";status.textContent=j.status||"pending";
-   const meta=document.createElement("div");meta.className="meta";meta.textContent="Location: "+(j.location||"—")+" | Category: "+(j.category||"—")+" | Vacancies: "+(j.vacancies||"—")+" | Last date: "+(j.lastDate||"—");
-   const desc=document.createElement("p");desc.textContent=j.description||"";div.append(title,status,meta,desc);container.appendChild(div);
-  });
- }catch(e){console.error(e);showError("Load failed: "+(e.code||e.message||"Unknown error")+". Please screenshot this message.");}
-},error=>{console.error(error);showError("Login check failed: "+(error.code||error.message));});
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);const msg=document.getElementById("msg"),container=document.getElementById("jobs"),modal=document.getElementById("modal"),form=document.getElementById("editForm"),editMsg=document.getElementById("editMsg");
+document.getElementById("back").onclick=()=>location.href="employer-dashboard.html";document.getElementById("cancel").onclick=()=>modal.style.display="none";
+let currentJobId=null,handled=false;const fields=["title","category","location","qualification","experience","salary","vacancies","lastDate","description"];
+function showError(t){msg.textContent=t;}
+function openEdit(id,j){currentJobId=id;fields.forEach(k=>document.getElementById(k).value=j[k]??"");editMsg.textContent="";modal.style.display="block";}
+function renderJob(id,j){const div=document.createElement("div");div.className="job";const title=document.createElement("h3");title.textContent=j.title||"Untitled Job";const status=document.createElement("span");status.className="status";status.textContent=j.status||"pending";const meta=document.createElement("div");meta.className="meta";meta.textContent="Location: "+(j.location||"—")+" | Category: "+(j.category||"—")+" | Vacancies: "+(j.vacancies||"—")+" | Last date: "+(j.lastDate||"—");const desc=document.createElement("p");desc.textContent=j.description||"";const btn=document.createElement("button");btn.className="editbtn";btn.textContent="Edit Job";btn.onclick=()=>openEdit(id,j);div.append(title,status,meta,desc,btn);container.appendChild(div);}
+form.onsubmit=async e=>{e.preventDefault();if(!currentJobId)return;const save=document.getElementById("save");save.disabled=true;save.textContent="Saving…";try{const updates={};fields.forEach(k=>updates[k]=document.getElementById(k).value.trim());updates.vacancies=Number(updates.vacancies);await updateDoc(doc(db,"jobs",currentJobId),updates);modal.style.display="none";container.innerHTML="";showError("Job details updated.");const user=auth.currentUser;const snap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));snap.forEach(d=>renderJob(d.id,d.data()));}catch(err){console.error(err);editMsg.textContent="Save failed: "+(err.code||err.message)+". Firestore Rules may need an update.";}finally{save.disabled=false;save.textContent="Save Changes";}};
+onAuthStateChanged(auth,async user=>{if(handled)return;handled=true;if(!user){showError("No active login found. Redirecting to login…");setTimeout(()=>location.href="login.html",1500);return;}try{showError("Checking Employer account…");const u=await getDoc(doc(db,"users",user.uid));if(!u.exists()){showError("User record not found.");return;}if(u.data().role!=="employer"){showError("Employer account required.");setTimeout(()=>location.href="login.html",1500);return;}showError("Signed in as "+(user.email||"Employer")+". Loading jobs…");const snap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));if(snap.empty){showError("No job posts found.");container.innerHTML='<div class="empty">You have not posted any jobs yet.</div>';return;}showError("Your job posts:");snap.forEach(d=>renderJob(d.id,d.data()));}catch(e){console.error(e);showError("Load failed: "+(e.code||e.message));}},error=>{showError("Login check failed: "+(error.code||error.message));});
 </script></body></html>
