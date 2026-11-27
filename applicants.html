@@ -10,9 +10,10 @@ h1{margin:0;font-size:22px}header small{opacity:.85}.wrap{max-width:1100px;margi
 .jobbox{border:1px solid #dce4ee;border-radius:12px;padding:15px;margin:14px 0}
 .jobbox h3{margin:0 0 10px}.app{border-top:1px solid #e5eaf0;padding:14px 0}
 .meta{font-size:14px;color:#586579;line-height:1.7}.status{display:inline-block;border-radius:18px;background:#eef2ff;padding:5px 9px;font-size:12px;font-weight:bold}
-select,button{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #cbd5e1}button{background:#1769d2;color:white;border:0;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{text-align:center;color:#64748b;padding:24px}
+select,button,input,textarea{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #cbd5e1}button{background:#1769d2;color:white;border:0;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{text-align:center;color:#64748b;padding:24px}
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;padding:12px;background:#f8fafc;border:1px solid #dce4ee;border-radius:10px}.filterbar input,.filterbar select{font:inherit;padding:9px;border:1px solid #cbd5e1;border-radius:8px;min-width:150px;flex:1}.filtercount{font-size:13px;color:#64748b;margin:5px 0}.shortlistbtn{background:#0f766e}.shortlistbtn.active{background:#134e4a}
+.interview{margin-top:12px;padding:12px;background:#f1f7ff;border:1px solid #d5e4f5;border-radius:10px}.interview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}.interview textarea{width:100%;margin-top:8px;min-height:65px}.interview-label{font-weight:bold;margin-bottom:8px;color:#173b70}.interview-info{margin-top:8px;font-size:13px;color:#334155}
 .modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10;padding:16px;overflow:auto}.modalbox{background:white;max-width:650px;margin:30px auto;border-radius:14px;padding:20px}.modalbox h2{margin-top:0}.profilegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.field{background:#f8fafc;padding:12px;border-radius:9px;overflow-wrap:anywhere}.field b{display:block;color:#475569;font-size:13px;margin-bottom:5px}.wide{grid-column:1/-1}.modalhead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
 @media print{body{background:white}.print-hidden{display:none!important}}
 </style></head><body>
@@ -33,7 +34,7 @@ const statusOptions=["Applied","Under Review","Shortlisted","Interview","Selecte
 const selectedJobId=new URLSearchParams(location.search).get("jobId");
 function val(x){return x==null||x===""?"Not provided":String(x)}
 function field(label,value,wide=false){return `<div class="field${wide?' wide':''}"><b>${label}</b>${esc(val(value))}</div>`}
-function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
 async function showProfile(uid,name){const modal=document.getElementById("profileModal"),box=document.getElementById("profileContent");document.getElementById("profileTitle").textContent=name+" — Profile";box.innerHTML="<p>Loading profile…</p>";modal.style.display="block";try{const snap=await getDoc(doc(db,"jobSeekers",uid));if(!snap.exists()){box.innerHTML='<p class="empty">Candidate profile not completed yet.</p>';return;}const p=snap.data();box.innerHTML='<div class="profilegrid">'+field("Full Name",p.fullName||name)+field("Mobile",p.mobile)+field("Email",p.email)+field("Date of Birth",p.dob)+field("Gender",p.gender)+field("Qualification",p.qualification)+field("Experience",p.experience)+field("Skills",p.skills,true)+field("Address",p.address,true)+field("About Me",p.aboutMe,true)+'</div>';}catch(e){box.innerHTML='<p class="empty">Profile could not be loaded. Check Firestore Rules permissions.</p>';console.error(e)}}
 onAuthStateChanged(auth,async user=>{if(!user){location.href="login.html";return;}
 try{const us=await getDoc(doc(db,"users",user.uid));if(!us.exists()||us.data().role!=="employer"){location.href="login.html";return;}
@@ -46,22 +47,16 @@ for(const jobDoc of selectedJobs){const j=jobDoc.data(),jobDiv=document.createEl
 const title=document.createElement("h3");title.textContent=j.title||"Job";
 const details=document.createElement("div");details.className="meta";details.textContent=(j.location||"")+" • "+(j.category||"")+" • Status: "+(j.status||"pending");jobDiv.append(title,details);
 const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",jobDoc.id)));
-// Per-job applicant filters
 const filterbar=document.createElement("div");filterbar.className="filterbar";
 filterbar.innerHTML='<input type="search" class="f-name" placeholder="Search name, email, mobile"><input type="search" class="f-qual" placeholder="Qualification"><input type="search" class="f-exp" placeholder="Experience"><select class="f-status"><option value="">All Statuses</option>'+statusOptions.map(x=>'<option>'+esc(x)+'</option>').join('')+'</select>';
 const filtercount=document.createElement("div");filtercount.className="filtercount";
 const shortlistBtn=document.createElement("button");shortlistBtn.className="shortlistbtn";shortlistBtn.textContent="Show Shortlisted Only";
-let shortlistedOnly=false;
-shortlistBtn.onclick=()=>{shortlistedOnly=!shortlistedOnly;shortlistBtn.textContent=shortlistedOnly?"Show All Applicants":"Show Shortlisted Only";shortlistBtn.classList.toggle("active",shortlistedOnly);doFilter();};
+let shortlistedOnly=false;shortlistBtn.onclick=()=>{shortlistedOnly=!shortlistedOnly;shortlistBtn.textContent=shortlistedOnly?"Show All Applicants":"Show Shortlisted Only";shortlistBtn.classList.toggle("active",shortlistedOnly);doFilter();};
 jobDiv.append(filterbar,shortlistBtn,filtercount);
 if(apps.empty){const no=document.createElement("p");no.className="empty";no.textContent="No applications received for this job.";jobDiv.append(no);}
 for(const appDoc of apps.docs){const a=appDoc.data(),row=document.createElement("div");row.className="app";
 let candidateProfile={};if(a.applicantId){try{const ps=await getDoc(doc(db,"jobSeekers",a.applicantId));if(ps.exists())candidateProfile=ps.data();}catch(e){console.warn("Candidate profile filter data unavailable",e);}}
-const filterName=(a.fullName||a.name||a.applicantName||candidateProfile.fullName||"").toLowerCase();
-const filterEmail=(a.email||a.applicantEmail||candidateProfile.email||"").toLowerCase();
-const filterMobile=(a.mobile||a.phone||candidateProfile.mobile||"").toLowerCase();
-const filterQual=(a.qualification||candidateProfile.qualification||"").toLowerCase();
-const filterExp=(a.experience||candidateProfile.experience||"").toLowerCase();
+const filterName=(a.fullName||a.name||a.applicantName||candidateProfile.fullName||"").toLowerCase(),filterEmail=(a.email||a.applicantEmail||candidateProfile.email||"").toLowerCase(),filterMobile=(a.mobile||a.phone||candidateProfile.mobile||"").toLowerCase(),filterQual=(a.qualification||candidateProfile.qualification||"").toLowerCase(),filterExp=(a.experience||candidateProfile.experience||"").toLowerCase();
 row.dataset.name=filterName;row.dataset.email=filterEmail;row.dataset.mobile=filterMobile;row.dataset.qualification=filterQual;row.dataset.experience=filterExp;row.dataset.status=(a.status||"Applied");
 const nm=document.createElement("h4");nm.textContent=a.fullName||a.name||a.applicantName||"Applicant";
 const info=document.createElement("div");info.className="meta";info.textContent="Email: "+(a.email||a.applicantEmail||"Not provided")+" | Mobile: "+(a.mobile||a.phone||"Not provided")+" | Applied: "+(a.createdAt?.toDate?a.createdAt.toDate().toLocaleDateString():"—");
@@ -69,8 +64,17 @@ const current=document.createElement("span");current.className="status";current.
 const sel=document.createElement("select");statusOptions.forEach(v=>{const op=document.createElement("option");op.value=v;op.textContent=v;sel.append(op);});sel.value=statusOptions.includes(a.status)?a.status:"Applied";
 const save=document.createElement("button");save.textContent="Update Status";save.onclick=async()=>{save.disabled=true;try{await updateDoc(doc(db,"applications",appDoc.id),{status:sel.value});current.textContent=sel.value;row.dataset.status=sel.value;doFilter();save.textContent="Updated";setTimeout(()=>save.textContent="Update Status",1500);}catch(e){alert("Status update failed. Check Firestore rules.");save.disabled=false;}};
 const view=document.createElement("button");view.className="secondary";view.textContent="View Candidate Profile";view.onclick=()=>showProfile(a.applicantId,nm.textContent);
-const controls=document.createElement("div");controls.className="controls";controls.append(view,sel,save);row.append(nm,info,current,controls);jobDiv.append(row);}
-
+const controls=document.createElement("div");controls.className="controls";controls.append(view,sel,save);row.append(nm,info,current,controls);
+// Interview scheduling controls and stored interview details
+const interview=document.createElement("div");interview.className="interview";
+interview.innerHTML='<div class="interview-label">Interview Management</div><div class="interview-grid"><input type="date" class="i-date" aria-label="Interview date"><input type="time" class="i-time" aria-label="Interview time"><select class="i-mode"><option value="">Interview mode</option><option>In Person</option><option>Phone</option><option>Video</option></select></div><textarea class="i-details" placeholder="Interview location, meeting link or instructions"></textarea><div class="controls"><button class="i-save">Save Interview Details</button><button class="secondary i-clear">Clear Fields</button></div><div class="interview-info"></div>';
+const idate=interview.querySelector(".i-date"),itime=interview.querySelector(".i-time"),imode=interview.querySelector(".i-mode"),idet=interview.querySelector(".i-details"),iinfo=interview.querySelector(".interview-info");
+idate.value=a.interviewDate||"";itime.value=a.interviewTime||"";imode.value=a.interviewMode||"";idet.value=a.interviewDetails||"";
+function renderInterviewInfo(){iinfo.textContent=(a.interviewDate||idate.value)&& (a.interviewTime||itime.value)?`Scheduled: ${idate.value||a.interviewDate} at ${itime.value||a.interviewTime} • ${imode.value||a.interviewMode||"Mode not set"}${idet.value?" • "+idet.value:""}`:"Interview not scheduled yet."}
+renderInterviewInfo();
+interview.querySelector(".i-save").onclick=async()=>{const b=interview.querySelector(".i-save");if(!idate.value||!itime.value){alert("Please select Interview Date and Time.");return;}b.disabled=true;try{await updateDoc(doc(db,"applications",appDoc.id),{interviewDate:idate.value,interviewTime:itime.value,interviewMode:imode.value,interviewDetails:idet.value});a.interviewDate=idate.value;a.interviewTime=itime.value;a.interviewMode=imode.value;a.interviewDetails=idet.value;renderInterviewInfo();b.textContent="Saved";setTimeout(()=>{b.textContent="Save Interview Details";b.disabled=false;},1300);}catch(e){console.error(e);alert("Interview details could not be saved. Firestore Rules may need to allow interview fields.");b.disabled=false;}};
+interview.querySelector(".i-clear").onclick=()=>{idate.value="";itime.value="";imode.value="";idet.value="";renderInterviewInfo();};
+row.append(interview);jobDiv.append(row);}
 const doFilter=()=>{const n=filterbar.querySelector(".f-name").value.trim().toLowerCase(),qv=filterbar.querySelector(".f-qual").value.trim().toLowerCase(),ev=filterbar.querySelector(".f-exp").value.trim().toLowerCase(),sv=filterbar.querySelector(".f-status").value;let shown=0,shortCount=0;jobDiv.querySelectorAll(".app").forEach(r=>{const isShort=r.dataset.status==="Shortlisted";if(isShort)shortCount++;const ok=(!n||(r.dataset.name.includes(n)||r.dataset.email.includes(n)||r.dataset.mobile.includes(n)))&&(!qv||r.dataset.qualification.includes(qv))&&(!ev||r.dataset.experience.includes(ev))&&(!sv||r.dataset.status===sv)&&(!shortlistedOnly||isShort);r.style.display=ok?"":"none";if(ok)shown++;});filtercount.textContent="Showing "+shown+" of "+apps.size+" applicants • Shortlisted: "+shortCount;};
 filterbar.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",doFilter));filterbar.querySelector(".f-status").addEventListener("change",doFilter);
 content.append(jobDiv);}
