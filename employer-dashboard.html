@@ -10,6 +10,7 @@ header h1{font-size:22px;margin:0}header small{opacity:.85}.wrap{max-width:1100p
 .welcome{background:white;border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 2px 10px #0000000b}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:16px 0}
 .card{background:white;padding:20px;border-radius:14px;box-shadow:0 2px 10px #0000000b}.card h3{font-size:14px;color:#667085;margin:0 0 12px}.num{font-size:30px;font-weight:bold;color:#173b70}
+.statuscard{cursor:pointer;transition:transform .12s,box-shadow .12s;border:1px solid #e6eaf2}.statuscard:hover{transform:translateY(-2px);box-shadow:0 5px 16px #00000012}.statuscard:focus{outline:3px solid #93c5fd}
 .actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
 .action{background:white;padding:20px;border-radius:14px;border:1px solid #e6eaf2}.action h3{margin-top:0}
 button,.btn{border:0;border-radius:9px;padding:12px 16px;background:#1769d2;color:white;font-weight:bold;cursor:pointer;text-decoration:none;display:inline-block}
@@ -25,10 +26,10 @@ button.secondary{background:#536477}.notice{margin:14px 0;padding:12px;border-ra
 <section class="welcome"><h2 id="welcome">Welcome</h2><div id="org">Loading organization profile…</div></section>
 <div class="cards">
 <div class="card"><h3>Total Jobs</h3><div class="num" id="jobCount">—</div></div>
-<div class="card"><h3>Active Jobs</h3><div class="num" id="activeJobCount">—</div></div>
-<div class="card"><h3>Expired Jobs</h3><div class="num" id="expiredJobCount">—</div></div>
-<div class="card"><h3>Closed Jobs</h3><div class="num" id="closedJobCount">—</div></div>
-<div class="card"><h3>Pending Approval</h3><div class="num" id="pendingJobCount">—</div></div>
+<div class="card statuscard" role="button" tabindex="0" data-filter="active"><h3>Active Jobs</h3><div class="num" id="activeJobCount">—</div></div>
+<div class="card statuscard" role="button" tabindex="0" data-filter="expired"><h3>Expired Jobs</h3><div class="num" id="expiredJobCount">—</div></div>
+<div class="card statuscard" role="button" tabindex="0" data-filter="closed"><h3>Closed Jobs</h3><div class="num" id="closedJobCount">—</div></div>
+<div class="card statuscard" role="button" tabindex="0" data-filter="pending"><h3>Pending Approval</h3><div class="num" id="pendingJobCount">—</div></div>
 <div class="card"><h3>Total Applicants</h3><div class="num" id="appCount">—</div></div>
 <div class="card"><h3>Shortlisted</h3><div class="num" id="shortCount">—</div></div>
 <div class="card"><h3>Interviews Scheduled</h3><div class="num" id="interviewCount">—</div></div>
@@ -47,50 +48,34 @@ button.secondary{background:#536477}.notice{margin:14px 0;padding:12px;border-ra
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-const firebaseConfig = {
- apiKey: "AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",
- authDomain: "rozgar-setu-843a4.firebaseapp.com",
- projectId: "rozgar-setu-843a4",
- storageBucket: "rozgar-setu-843a4.firebasestorage.app",
- messagingSenderId: "126750586369",
- appId: "1:126750586369:web:2715fb776914a8bd6a7200",
- measurementId: "G-X1QWM01DV5"
-};
-const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
-const statusEl=document.getElementById("status"), notice=document.getElementById("notice");
-function showNotice(msg){notice.textContent=msg;notice.style.display="block";}
-function isPastLastDate(j){return !!j.lastDate && j.lastDate < new Date().toISOString().slice(0,10);}
+const firebaseConfig = {apiKey:"AIzaSyC4C1tD7zYlZZNwEnCyQBgZo1TReTSgH1E",authDomain:"rozgar-setu-843a4.firebaseapp.com",projectId:"rozgar-setu-843a4",storageBucket:"rozgar-setu-843a4.firebasestorage.app",messagingSenderId:"126750586369",appId:"1:126750586369:web:2715fb776914a8bd6a7200",measurementId:"G-X1QWM01DV5"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const statusEl=document.getElementById("status");
+const today=()=>new Date().toISOString().slice(0,10);
+function jobClass(j){if(j.status==="closed")return "closed";if(j.status==="rejected")return "rejected";if(j.status==="expired"||(j.lastDate&&j.lastDate<today()))return "expired";if(j.status==="approved")return "active";return "pending";}
+function goFilter(filter){location.href="my-jobs.html?filter="+encodeURIComponent(filter);}
+document.querySelectorAll(".statuscard").forEach(card=>{card.onclick=()=>goFilter(card.dataset.filter);card.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goFilter(card.dataset.filter);}};});
 onAuthStateChanged(auth,async user=>{
  if(!user){location.href="login.html";return;}
  try{
   const u=await getDoc(doc(db,"users",user.uid));
   if(!u.exists()||u.data().role!=="employer"){statusEl.textContent="This dashboard is for Employer accounts.";await signOut(auth);location.href="login.html";return;}
-  const data=u.data(), name=data.organizationName||"Employer";
+  const data=u.data(),name=data.organizationName||"Employer";
   document.getElementById("welcome").textContent="Welcome, "+name;
   document.getElementById("org").textContent="Contact person: "+(data.contactPerson||"Not provided")+" • "+user.email;
   const employerSnap=await getDoc(doc(db,"employers",user.uid));
   document.getElementById("verifyStatus").textContent=employerSnap.exists()?(employerSnap.data().verificationStatus||"Pending"):"Pending";
   const jobsSnap=await getDocs(query(collection(db,"jobs"),where("employerId","==",user.uid)));
   document.getElementById("jobCount").textContent=jobsSnap.size;
-  let total=0,shortlisted=0,interviews=0,selected=0,active=0,expired=0,closed=0,pending=0;
+  let active=0,expired=0,closed=0,pending=0,total=0,shortlisted=0,interviews=0,selected=0;
   for(const job of jobsSnap.docs){
-    const jd=job.data();
-    if(jd.status==="closed"){closed++;}
-    else if(jd.status==="expired"||isPastLastDate(jd)){expired++;}
-    else if(jd.status==="approved"){active++;}
-    else if(jd.status==="pending"){pending++;}
+    const jd=job.data(),cl=jobClass(jd);
+    if(cl==="active")active++;else if(cl==="expired")expired++;else if(cl==="closed")closed++;else if(cl==="pending")pending++;
     const apps=await getDocs(query(collection(db,"applications"),where("jobId","==",job.id)));
     total+=apps.size;
     for(const ap of apps.docs){const ad=ap.data();if(ad.status==="Shortlisted")shortlisted++;if(ad.status==="Selected")selected++;if(ad.interviewDate&&ad.interviewTime)interviews++;}
   }
-  document.getElementById("activeJobCount").textContent=active;
-  document.getElementById("expiredJobCount").textContent=expired;
-  document.getElementById("closedJobCount").textContent=closed;
-  document.getElementById("pendingJobCount").textContent=pending;
-  document.getElementById("appCount").textContent=total;
-  document.getElementById("shortCount").textContent=shortlisted;
-  document.getElementById("interviewCount").textContent=interviews;
-  document.getElementById("selectedCount").textContent=selected;
+  [["activeJobCount",active],["expiredJobCount",expired],["closedJobCount",closed],["pendingJobCount",pending],["appCount",total],["shortCount",shortlisted],["interviewCount",interviews],["selectedCount",selected]].forEach(([id,val])=>document.getElementById(id).textContent=val);
   statusEl.textContent="Logged in as Employer • "+user.email;
  }catch(e){statusEl.textContent="Dashboard loaded, but some data could not be read. Check Firestore rules/collection field names.";console.error(e);}
 });
@@ -99,5 +84,4 @@ document.getElementById("postJob").onclick=()=>location.href="post-job.html";
 document.getElementById("myJobs").onclick=()=>location.href="my-jobs.html";
 document.getElementById("applicants").onclick=()=>location.href="applicants.html";
 document.getElementById("profile").onclick=()=>location.href="employer-profile.html";
-</script>
-</body></html>
+</script></body></html>
