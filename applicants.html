@@ -12,11 +12,12 @@ h1{margin:0;font-size:22px}header small{opacity:.85}.wrap{max-width:1100px;margi
 .meta{font-size:14px;color:#586579;line-height:1.7}.status{display:inline-block;border-radius:18px;background:#eef2ff;padding:5px 9px;font-size:12px;font-weight:bold}
 select,button{font:inherit;border-radius:8px;padding:9px 12px;border:1px solid #cbd5e1}button{background:#1769d2;color:white;border:0;font-weight:bold;cursor:pointer}.secondary{background:#536477}.empty{text-align:center;color:#64748b;padding:24px}
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10;padding:16px;overflow:auto}.modalbox{background:white;max-width:650px;margin:30px auto;border-radius:14px;padding:20px}.modalbox h2{margin-top:0}.profilegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.field{background:#f8fafc;padding:12px;border-radius:9px;overflow-wrap:anywhere}.field b{display:block;color:#475569;font-size:13px;margin-bottom:5px}.wide{grid-column:1/-1}.modalhead{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.modal{display:none;position:fixed;inset:0;background:#0f172a99;z-index:10;padding:16px;overflow:auto}.modalbox{background:white;max-width:650px;margin:30px auto;border-radius:14px;padding:20px}.modalbox h2{margin-top:0}.profilegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.field{background:#f8fafc;padding:12px;border-radius:9px;overflow-wrap:anywhere}.field b{display:block;color:#475569;font-size:13px;margin-bottom:5px}.wide{grid-column:1/-1}.modalhead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+@media print{body{background:white}.print-hidden{display:none!important}}
 </style></head><body>
 <header><div><h1>Rozgar Setu</h1><small>Applicants</small></div><button class="secondary" id="back">Dashboard</button></header>
 <div class="wrap"><section class="panel"><h2>Applications for My Jobs</h2><div id="msg">Checking login…</div><div id="content"></div></section></div>
-<div class="modal" id="profileModal"><div class="modalbox"><div class="modalhead"><h2 id="profileTitle">Candidate Profile</h2><button class="secondary" id="closeProfile">Close</button></div><div id="profileContent"></div></div></div>
+<div class="modal" id="profileModal"><div class="modalbox"><div class="modalhead print-hidden"><h2 id="profileTitle">Candidate Profile</h2><div class="controls"><button id="printProfile">Print Profile / Save PDF</button><button class="secondary" id="closeProfile">Close</button></div></div><div id="profileContent"></div></div></div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -26,6 +27,7 @@ const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),c
 document.getElementById("back").onclick=()=>location.href="employer-dashboard.html";
 document.getElementById("closeProfile").onclick=()=>document.getElementById("profileModal").style.display="none";
 document.getElementById("profileModal").onclick=e=>{if(e.target.id==="profileModal")e.target.style.display="none"};
+document.getElementById("printProfile").onclick=()=>{const profile=document.getElementById("profileContent").innerHTML;const title=document.getElementById("profileTitle").textContent;const w=window.open("","_blank");if(!w){alert("Please allow pop-ups to print the profile.");return;}w.document.write(`<!DOCTYPE html><html><head><title>${title.replace(/[<>]/g,"")}</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font-family:Arial,sans-serif;color:#172033;margin:25px}h1{color:#173b70;border-bottom:2px solid #173b70;padding-bottom:10px}.profilegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{border:1px solid #dce4ee;border-radius:8px;padding:12px;overflow-wrap:anywhere}.field b{display:block;color:#475569;font-size:13px;margin-bottom:5px}.wide{grid-column:1/-1}@media print{body{margin:15mm}}</style></head><body><h1>Rozgar Setu — Candidate Profile</h1>${profile}<script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();};
 const statusOptions=["Applied","Under Review","Shortlisted","Interview","Selected","Rejected"];
 const selectedJobId=new URLSearchParams(location.search).get("jobId");
 function val(x){return x==null||x===""?"Not provided":String(x)}
